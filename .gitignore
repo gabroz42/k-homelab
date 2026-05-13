@@ -29,3 +29,4 @@ tmp/
 system-cleanup.yaml
 
 !**/*-externalsecret.yaml
+!infrastructure/configs/network-policies/external-secrets-policies.yaml
