@@ -4,3 +4,4 @@ resources:
   - coredns
   - external-secrets
   - metallb
+  - sources
