@@ -1,0 +1,24 @@
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: apache-root-init
+  namespace: kyverno
+spec:
+  policyRefs:
+    - kind: ValidatingPolicy
+      name: require-run-as-non-root
+    - kind: ValidatingPolicy
+      name: require-no-privilege-escalation
+    - kind: ValidatingPolicy
+      name: require-drop-all-capabilities
+    - kind: ValidatingPolicy
+      name: require-seccomp-profile
+  reportResult: skip
+  matchConditions:
+    - name: nextcloud-apache-prefork
+      expression: >-
+        object.metadata.namespace == 'nextcloud' &&
+        !object.metadata.name.startsWith('nextcloud-postgresql') &&
+        !object.metadata.name.startsWith('nextcloud-redis') &&
+        !object.metadata.name.startsWith('nextcloud-db-backup') &&
+        (object.metadata.name == 'nextcloud' || object.metadata.name.startsWith('nextcloud-'))
