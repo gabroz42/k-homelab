@@ -1,0 +1,23 @@
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: privileged-workloads
+  namespace: kyverno
+spec:
+  policyRefs:
+    - kind: ValidatingPolicy
+      name: require-run-as-non-root
+    - kind: ValidatingPolicy
+      name: require-no-privilege-escalation
+    - kind: ValidatingPolicy
+      name: require-drop-all-capabilities
+    - kind: ValidatingPolicy
+      name: require-seccomp-profile
+  reportResult: skip
+  matchConditions:
+    - name: tuner-and-fan-control-hardware-access
+      expression: >-
+        (object.metadata.namespace == 'jellyfin' && (object.metadata.name == 'tvheadend' ||
+        object.metadata.name.startsWith('tvheadend-'))) ||
+        (object.metadata.namespace == 'pankha' &&
+        object.metadata.name.startsWith('pankha-agent'))
