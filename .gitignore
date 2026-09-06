@@ -26,7 +26,6 @@ tmp/
 
 .kube/
 *DS_Store
-system-cleanup.yaml
 
 !**/*-externalsecret.yaml
 !infrastructure/configs/network-policies/external-secrets-policies.yaml
