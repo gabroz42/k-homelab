@@ -89,3 +89,53 @@ spec:
               - 10.0.0.0/8
               - 172.16.0.0/12
               - ${LAN_SUPERNET}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-servarr-ingress-from-lidarr
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - qbittorrent
+          - prowlarr
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: music
+          podSelector:
+            matchLabels:
+              app: lidarr
+      ports:
+        - port: 8080
+          protocol: TCP
+        - port: 9696
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prowlarr-egress-to-lidarr
+spec:
+  podSelector:
+    matchLabels:
+      app: prowlarr
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: music
+          podSelector:
+            matchLabels:
+              app: lidarr
+      ports:
+        - port: 8686
+          protocol: TCP
