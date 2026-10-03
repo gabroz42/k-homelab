@@ -4,6 +4,7 @@ metadata:
   name: immich-server
   namespace: immich
 spec:
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -87,10 +88,10 @@ spec:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 200m
+              cpu: 500m
               memory: 2Gi
             limits:
-              cpu: 2000m
+              cpu: 4000m
               memory: 3Gi
 
       volumes:
