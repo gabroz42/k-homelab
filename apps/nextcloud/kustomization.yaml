@@ -5,7 +5,6 @@ resources:
   - nextcloud-cron.yaml
   - nextcloud-externalsecret.yaml
   - nextcloud-helmrelease.yaml
-  - nextcloud-hpa.yaml
   - nextcloud-hsts.yaml
   - nextcloud-internal-ingress.yaml
   - nextcloud-pdb.yaml
