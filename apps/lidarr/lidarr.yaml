@@ -32,6 +32,8 @@ spec:
           value: "1000"
         - name: TZ
           value: "${TIMEZONE}"
+        - name: LIDARR__SERVER__TRUSTEDNETWORKS
+          value: "${POD_CIDR}"
         livenessProbe:
           httpGet:
             path: /ping

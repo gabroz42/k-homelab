@@ -35,6 +35,8 @@ spec:
               value: "1000"
             - name: TZ
               value: "${TIMEZONE}"
+            - name: RADARR__SERVER__TRUSTEDNETWORKS
+              value: "${POD_CIDR}"
           resources:
             requests:
               cpu: 50m
