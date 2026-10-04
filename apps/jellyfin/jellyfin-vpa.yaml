@@ -10,3 +10,7 @@ spec:
     name: jellyfin
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        controlledResources: ["memory"]
