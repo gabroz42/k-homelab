@@ -44,7 +44,7 @@ GitRepository/flux-system            polls ssh://git@github.com/Gabroz4/k-homela
    │
    ├─ Kustomization/infrastructure-configs       path: ./infrastructure/configs       ← TIER 2
    │     wait: true
-   │     → namespaces · network-policies · upgrade-plans
+   │     → namespaces · network-policies
    │
    ├─ Kustomization/infrastructure-controllers   path: ./infrastructure/controllers   ← TIER 2
    │     wait: true · dependsOn → infrastructure-configs
@@ -299,24 +299,46 @@ Test a restore occasionally — an untested backup is a rumour.
 ## 9. Upgrades
 
 - **Images & charts** — Renovate opens PRs weekly (Mon 06:00). Digest and patch bumps auto-merge once CI (`kubeconform` + `flux-local`) passes; minor/major bumps are reviewed by hand. Don't bump versions manually.
-- **k3s** — handled by the system-upgrade-controller via the `Plan`s in `infrastructure/configs/upgrade-plans/`. The agent Plan must tolerate the Pi's taint or its pod sits `Pending`.
+- **k3s** — handled by the system-upgrade-controller via the `Plan`s in `apps/upgrade-plans/` (the controller itself is vendored in `infrastructure/controllers/system-upgrade/`). The agent Plan must tolerate the Pi's taint or its pod sits `Pending`.
 
 ---
 
 ## 10. Bootstrapping from zero on a new machine
 
-1. **k3s** — install k3s on the x86 node. Optionally join the Pi as an agent with `--node-taint workload=stateless:NoSchedule`.
-2. **Longhorn** — installed out-of-band (it is not in this repo's Flux tree); install it before the apps that need PVCs.
-3. **Bitwarden** — create the org + access token; populate every `<ns>/<name>/<field>` key the `ExternalSecret`s reference.
-4. **cluster-settings** — apply the ConfigMap *first* so `postBuild` substitutions resolve:
-   `kubectl apply -f clusters/homelab/cluster-settings.yaml`
-5. **Bitwarden access token** — apply the bootstrap Secret out-of-band:
-   `kubectl -n external-secrets apply -f bitwarden-access-token.yaml`
-6. **Flux** — `flux bootstrap github --owner=<owner> --repository=<repo> --branch=main --path=clusters/homelab --personal`. This regenerates `gotk-sync.yaml` with the new repo URL and starts the reconciliation loop.
-7. **Cloudflare** — create the per-service tunnels, save tokens in Bitwarden, map `flux-webhook.<domain>` onto a tunnel → `webhook-receiver.flux-system.svc.cluster.local:80`.
-8. **GitHub webhook** — `task webhook-url` prints it; add it to the repo's webhook settings with the HMAC secret from Bitwarden.
+One script does it: `bootstrap/bootstrap.sh`. It builds an **empty** copy of the cluster (same
+stack, no data — restoring data from restic is a separate job).
 
-From there, Flux reconciles the whole cluster from git.
+**By hand, before the script** (external accounts the script cannot create):
+1. **GitHub** — fork the repo; create a PAT for `flux bootstrap`.
+2. **Bitwarden Secrets Manager** — org, project, machine access token; populate every
+   `<ns>/<name>/<field>` key the `ExternalSecret`s reference.
+3. **Cloudflare** — the zone, an API token with Zone:DNS:Edit (BW
+   `cert-manager/cloudflare-api-token/api-token`), one tunnel per public hostname (tokens in BW
+   under `cloudflared/<svc>-tunnel-token/token`), and `flux-webhook.<domain>` mapped onto one
+   tunnel → `webhook-receiver.flux-system.svc.cluster.local:80`.
+4. **Site inputs** — `cp bootstrap/site.env.example bootstrap/site.env` (gitignored), fill it in,
+   run `task render-settings`, then commit + push `clusters/homelab/cluster-settings.yaml`.
+5. **Hardware-only apps** — drop the ones the site lacks from `apps/kustomization.yaml`
+   (`nut-exporter` = UPS, `pankha` = fan control, `centralino` = ESP32s, tvheadend = DVB tuner).
+
+**Then, on the new machine:** `sudo bootstrap/bootstrap.sh` (or `task bootstrap`). In order it:
+installs host packages (open-iscsi, …), blacklists `sd*` in multipathd, fixes a Tailscale-polluted
+resolv.conf, mounts the disks from `DISK_MOUNTS`, makes mount parents traversable for
+node-exporter, creates the hostPath dirs as uid 1000, installs pinned k3s, seeds `cluster-settings`
++ the BW access token + the bitwarden-sdk-server TLS, installs pinned Longhorn
+(`bootstrap/longhorn/`) with its settings and disk tags, then runs `flux bootstrap` and waits for
+the tree. It is idempotent (re-run after a failure) and refuses to run on a host that already has
+workloads unless `--force`.
+
+**After the script** it prints the remaining manual steps: GitHub webhook (`task webhook-url`),
+AdGuard wizard + the `*.<local-domain>` and `authentik.<domain>` rewrites, router DNS, and the
+Authentik providers/applications (that config lives in Authentik's database).
+
+**Why Longhorn is not in Flux:** its chart ships the CRDs as templates without
+`helm.sh/resource-policy: keep`, so any Helm uninstall (a pruned HelmRelease, a failed install
+remediation) would delete every Volume/Replica/Engine record. A pinned kubectl install cannot be
+removed by a git mistake. When you upgrade Longhorn by hand (one minor at a time), bump
+`bootstrap/longhorn/VERSION` too.
 
 ---
 
