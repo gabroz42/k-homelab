@@ -4,6 +4,7 @@ resources:
   - backup-cronjobs.yaml
   - backup-externalsecret.yaml
   - backup-prometheusrule.yaml
+  - longhorn-volumesnapshotclass.yaml
   - restic-rest-server.yaml
   - restic-rest-server-externalsecret.yaml
   - restic-exporter
@@ -15,3 +16,4 @@ resources:
   - volsync-matrix.yaml
   - volsync-jellyfin.yaml
   - volsync-adguard.yaml
+  - volsync-servicemonitor.yaml
