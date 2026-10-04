@@ -33,8 +33,8 @@ spec:
 
     prometheus:
       prometheusSpec:
-        retention: 14d
-        retentionSize: 18GB
+        retention: 30d
+        retentionSize: 36GB
         resources:
           requests:
             cpu: 500m
@@ -49,7 +49,7 @@ spec:
               storageClassName: longhorn
               resources:
                 requests:
-                  storage: 25Gi
+                  storage: 40Gi
 
         additionalScrapeConfigs:
           - job_name: "loki"
