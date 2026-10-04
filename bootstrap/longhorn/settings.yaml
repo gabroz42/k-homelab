@@ -1,0 +1,27 @@
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: storage-minimal-available-percentage
+  namespace: longhorn-system
+value: '10'
+---
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: concurrent-automatic-engine-upgrade-per-node-limit
+  namespace: longhorn-system
+value: '3'
+---
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: default-replica-count
+  namespace: longhorn-system
+value: '{"v1":"1","v2":"1"}'
+---
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: deleting-confirmation-flag
+  namespace: longhorn-system
+value: 'false'

@@ -8,22 +8,26 @@ resources:
   - centralino/ks.yaml
   - cert-manager-config/ks.yaml
   - cloudflared/ks.yaml
+  - external-secrets-config/ks.yaml
   - flux-webhook/ks.yaml
   - grafana/ks.yaml
   - headlamp/ks.yaml
   - homepage/ks.yaml
   - immich/ks.yaml
   - jellyfin/ks.yaml
-  - lidarr/ks.yaml
-  - longhorn/ks.yaml
   - kyverno-policies/ks.yaml
+  - lidarr/ks.yaml
   - loki/ks.yaml
+  - longhorn/ks.yaml
   - matrix/ks.yaml
+  - metallb-config/ks.yaml
   - minio/ks.yaml
   - navidrome/ks.yaml
   - nextcloud/ks.yaml
   - nut-exporter/ks.yaml
   - pankha/ks.yaml
   - prometheus/ks.yaml
+  - prometheus/rules/ks.yaml
   - servarr/ks.yaml
   - traefik/ks.yaml
+  - upgrade-plans/ks.yaml
