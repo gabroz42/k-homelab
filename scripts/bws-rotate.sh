@@ -13,7 +13,7 @@
 # external-secrets/bitwarden-access-token. That token is the same one ESO uses;
 # it has write scope on the project pinned below.
 #
-# Project ID is pinned to the one referenced by the ClusterSecretStore — calls
+# Project ID comes from BW_PROJECT_ID (env, else the live cluster-settings) — calls
 # to other projects are rejected by BWS anyway, but pinning catches typos early.
 #
 # Intended to be invoked by the `autorotate-*` Taskfile tasks. Calling the
@@ -21,7 +21,7 @@
 
 set -euo pipefail
 
-PROJECT_ID="eb7f19cd-99ea-4888-95f7-b41600be7baf"
+PROJECT_ID="${BW_PROJECT_ID:-$(kubectl -n flux-system get cm cluster-settings -o jsonpath='{.data.BW_PROJECT_ID}' 2>/dev/null || true)}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 

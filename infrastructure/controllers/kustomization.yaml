@@ -10,5 +10,6 @@ resources:
   - reloader
   - snapshot-controller
   - sources
+  - system-upgrade
   - volsync
   - vpa

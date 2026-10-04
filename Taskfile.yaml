@@ -18,6 +18,16 @@ tasks:
     cmds:
       - ./scripts/validate-settings.sh
 
+  render-settings:
+    desc: 'Regenerate clusters/homelab/cluster-settings.yaml from bootstrap/site.env (new site only)'
+    cmds:
+      - ./bootstrap/render-settings.sh
+
+  bootstrap:
+    desc: 'Build the cluster on a FRESH machine from bootstrap/site.env — refuses to run on a host with workloads'
+    cmds:
+      - sudo ./bootstrap/bootstrap.sh
+
   reconcile:
     desc: Pull latest from git and reconcile every root Kustomization
     cmds:
