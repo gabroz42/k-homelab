@@ -42,3 +42,28 @@ spec:
                 name: authentik-server
                 port:
                   number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: authentik-lan
+  namespace: authentik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - authentik.${PUBLIC_DOMAIN}
+      secretName: authentik-public-tls
+  rules:
+    - host: authentik.${PUBLIC_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik-server
+                port:
+                  number: 80

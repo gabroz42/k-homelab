@@ -10,3 +10,9 @@ data:
         cache 300
         forward . ${ADGUARD_IP} 1.1.1.1
     }
+  authentik-public.server: |
+    authentik.${PUBLIC_DOMAIN}:53 {
+        errors
+        cache 30
+        forward . 1.1.1.1 1.0.0.1
+    }
