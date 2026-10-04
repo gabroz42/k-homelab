@@ -174,7 +174,7 @@ task render-settings                               # write cluster-settings.yaml
 task bootstrap                                     # sudo bootstrap/bootstrap.sh on the new machine
 ```
 
-In order, the script prepares the host (packages, multipathd, mounts, hostPath dirs), installs a pinned k3s, seeds `cluster-settings` and the Bitwarden token, installs a pinned [Longhorn](https://longhorn.io) with its disk tags, then runs `flux bootstrap` and waits until the whole tree is Ready. It is idempotent, so a failed run can simply be re-run, and it refuses to touch a host that already runs workloads. Longhorn stays out of Flux on purpose: its chart ships the CRDs without a keep policy, so a pruned HelmRelease would delete every volume record with it. The external accounts (GitHub, Bitwarden, Cloudflare) and the post-install steps are covered in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md) §10.
+In order, the script prepares the host (packages, multipathd, mounts, hostPath dirs), installs a pinned k3s, seeds `cluster-settings` and the Bitwarden token, installs a pinned [Longhorn](https://longhorn.io) with its disk tags, then runs `flux bootstrap` and waits until the whole tree is Ready. It is idempotent, so a failed run can simply be re-run, and it refuses to touch a host that already runs workloads. Longhorn stays out of Flux on purpose: its chart ships the CRDs without a keep policy, so a pruned HelmRelease would delete every volume record with it. The external accounts (GitHub, Bitwarden, Cloudflare) and the post-install steps are covered in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md).
 
 ## Operations
 
