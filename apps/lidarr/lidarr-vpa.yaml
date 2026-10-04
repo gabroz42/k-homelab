@@ -10,3 +10,7 @@ spec:
     name: lidarr
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        controlledResources: ["memory"]
