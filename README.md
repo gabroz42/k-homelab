@@ -18,34 +18,34 @@ _My home Kubernetes cluster — fully self-hosted, GitOps-managed, and reconcile
 
 ## Overview
 
-This is the single source of truth for my home Kubernetes cluster. Every workload, controller and bit of config lives here and is applied through GitOps — there is no manual `kubectl apply`, the `main` branch _is_ the desired state of the cluster. Most of the hardware was recycled from old upgrades or gifted by friends; the only things I actually bought were the cheapest micro-ATX parts I could find on a student budget.
+This is the single source of truth for my home Kubernetes cluster. Every workload, controller and config lives here and is applied through GitOps — there is no manual `kubectl apply`, the `main` branch _is_ the desired state of the cluster. Most of the hardware was recycled from old upgrades or gifted by friends, plus some cheap micro-ATX bits.
 
-It started as a way to learn Kubernetes properly and grew into the thing that runs my photos, media, files and identity. Along the way I tried to hold it to the standards I'd want at work: declarative config, no secrets in Git, automated dependency and node upgrades, append-only backups, and enough observability to know when something breaks before I do.
+It started as a way to learn Kubernetes and grew into the thing that handles my photos, media and files. Along the way I tried to hold it to the standards I'd want at work: declarative config, no secrets in Git, automated dependency and node upgrades, append-only backups and a good amount of observability.
 
-The whole thing is self-hosted. The only door to the outside world is a set of Cloudflare Tunnels — there are no ports forwarded on my router.
+The cluster is self-hosted. The only door to the outside world is a set of Cloudflare Tunnels — there are no ports forwarded on my router.
 
 ## Hardware
 
-One node, built from upgraded gaming pc parts or bought cheap on a student budget. A Raspberry Pi 5 used to run the stateless pods; it has been retired, but the scheduling hooks for a second node are still in place.
+Single node, runs every workload and carries all persistent disks
 
-| Node | Arch | Role | Notes |
-| --- | --- | --- | --- |
-| `homelab` | x86_64 | control-plane + storage + workloads | Ryzen 2600x 16GB ram, microATX, runs every workload and carries all persistent disks |
+| Node      | Arch   | Role                                | Notes                |
+| --------- | ------ | ----------------------------------- | -------------------- |
+| `homelab` | x86_64 | control-plane + storage + workloads | Ryzen 2600x 32GB ram |
 
-All storage hangs off `homelab`:
+All storage is attached to `homelab`:
 
-- **[Longhorn](https://longhorn.io)** manages two NVMe drives (1 TB + 500 GB); Immich's volumes are pinned to a specific drive through a `longhorn.io/disk-selector`.
-- A separate **2 TB HDD** at `/mnt/backups` holds the append-only restic repository, kept off the Longhorn pool.
-- Bulk media and music sit on their own host-path disks, mounted straight into Jellyfin and the \*arr stack.
+- **[Longhorn](https://longhorn.io)** manages two NVMe drives (1 TB + 500 GB)
+- A separate **2 TB HDD** holds the append-only restic repository for backups, kept off the Longhorn pool
+- Media and music sit on their own host-path disks, mounted straight into the pods
 
 Power & thermals:
 
-- The box runs behind a **UPS**, exposed on the LAN through [NUT](https://networkupstools.org); `nut-exporter` scrapes battery charge, runtime, load and line voltage into Prometheus so I'm alerted on a power event or a tired battery.
-- Fan curves are driven by **Pankha**, reading the motherboard's `nct6793` sensors with an emergency ramp if a reading goes out of control.
+- The box runs behind a **UPS**, exposed on the LAN through [NUT](https://networkupstools.org); `nut-exporter` scrapes battery charge, runtime, load and line voltage into Prometheus so i get alerts on a power event or a tired battery.
+- Fan curves are driven by **Pankha**, reading the motherboard's sensors with an emergency ramp if a reading goes out of control.
 
 ## Cluster
 
-[k3s](https://k3s.io) on a single x86 node that is control-plane, storage and worker in one. Lightweight, no-state pods (like the tunnels) still carry node affinity for `${STATELESS_NODE}` and a toleration for a `workload=stateless` taint, so pointing that setting at a new, tainted node moves them off the main box without touching any manifest.
+[k3s](https://k3s.io) on a single x86 node that is control-plane, storage and worker in one. Lightweight, no-state pods (like the tunnels) still carry node affinity for `${STATELESS_NODE}` and a toleration for a `workload=stateless` taint, so pointing that setting at a new, tainted node moves them off the main box without touching any manifest (leftover from previous 2 node setup).
 
 ### Core components
 
@@ -100,29 +100,29 @@ schema               # cluster diagrams (PlantUML source + rendered PNGs)
 
 Each public service runs its own `cloudflared` deployment (named tunnel, token from Bitwarden), two replicas behind a PodDisruptionBudget with a `/ready` check on the edge connection so a disconnected tunnel actually fails its probe. Several sit behind Authentik forward-auth.
 
-| Service | Purpose |
-| --- | --- |
-| [Jellyfin](https://jellyfin.org) | Film & TV streaming |
-| [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV / IPTV streams |
-| [Nextcloud](https://nextcloud.com) | General-purpose cloud storage (MinIO S3 backend) |
-| [Immich](https://immich.app) | Self-hosted photo backup |
-| [Navidrome](https://navidrome.org) | Music streaming |
-| [Matrix](https://matrix.org) | Chat — Synapse, Element Web and MAS for login |
-| [Authentik](https://goauthentik.io) | Centralized SSO / identity provider |
-| [Grafana](https://grafana.com) | Monitoring & dashboards |
-| Centralino | Home-automation panel for the ESP32 boards |
+| Service                                                   | Purpose                                          |
+| --------------------------------------------------------- | ------------------------------------------------ |
+| [Jellyfin](https://jellyfin.org)                          | Film & TV streaming                              |
+| [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV / IPTV streams                           |
+| [Nextcloud](https://nextcloud.com)                        | General-purpose cloud storage (MinIO S3 backend) |
+| [Immich](https://immich.app)                              | Self-hosted photo backup                         |
+| [Navidrome](https://navidrome.org)                        | Music streaming                                  |
+| [Matrix](https://matrix.org)                              | Chat — Synapse, Element Web and MAS for login    |
+| [Authentik](https://goauthentik.io)                       | Centralized SSO / identity provider              |
+| [Grafana](https://grafana.com)                            | Monitoring & dashboards                          |
+| Centralino                                                | Home-automation panel for the ESP32 boards       |
 
 ### Local — via Traefik
 
 Served on the LAN at `*.local.gabro.ovh`; AdGuard rewrites those hostnames to Traefik's MetalLB IP and Traefik presents the wildcard cert.
 
-| Service | Purpose |
-| --- | --- |
-| \*arr stack | Prowlarr, Radarr, Sonarr, Lidarr, qBittorrent, Seerr, tvheadend |
+| Service                                                        | Purpose                                                                   |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| \*arr stack                                                    | Prowlarr, Radarr, Sonarr, Lidarr, qBittorrent, Seerr, tvheadend           |
 | [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Network filtering + local DNS (admin UI also public, behind forward-auth) |
-| [Headlamp](https://headlamp.dev) | Kubernetes UI |
-| Pankha | Fan / thermal control dashboard |
-| Homepage | Service dashboard (also public, behind forward-auth) |
+| [Headlamp](https://headlamp.dev)                               | Kubernetes UI                                                             |
+| Pankha                                                         | Fan / thermal control dashboard                                           |
+| Homepage                                                       | Service dashboard (also public, behind forward-auth)                      |
 
 The nodes themselves are reachable only over VPN + SSH.
 
@@ -186,4 +186,3 @@ task tree name=nextcloud   # list every resource a Kustomization manages
 ```
 
 Every push is validated in CI by [kubeconform](https://github.com/yannh/kubeconform) (schema validation) and [flate](https://github.com/home-operations/flate) (offline build and diff of the Flux tree).
-
