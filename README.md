@@ -26,12 +26,11 @@ The whole thing is self-hosted. The only door to the outside world is a set of C
 
 ## Hardware
 
-Two nodes: a main homelab node built from upgraded gaming pc parts or bought cheap on a student budget, and a raspberry pi5
+One node, built from upgraded gaming pc parts or bought cheap on a student budget. A Raspberry Pi 5 used to run the stateless pods; it has been retired, but the scheduling hooks for a second node are still in place.
 
 | Node | Arch | Role | Notes |
 | --- | --- | --- | --- |
-| `homelab` | x86_64 | control-plane + storage | Ryzen 2600x 16GB ram, microATX, carries every stateful workload and all persistent disks |
-| `pi-node` | arm64 | worker (stateless) | Raspberry Pi 5 (8 GB), tainted `workload=stateless` — runs only lightweight, no-state pods like the Cloudflare tunnels |
+| `homelab` | x86_64 | control-plane + storage + workloads | Ryzen 2600x 16GB ram, microATX, runs every workload and carries all persistent disks |
 
 All storage hangs off `homelab`:
 
@@ -46,14 +45,14 @@ Power & thermals:
 
 ## Cluster
 
-[k3s](https://k3s.io) across two nodes, split by responsibility. The x86 box is the control-plane and holds all persistent storage and stateful workloads; a Raspberry Pi sits alongside it, tainted `workload=stateless`, and runs lightweight pods (like the tunnels) pinned there through node affinity and tolerations.
+[k3s](https://k3s.io) on a single x86 node that is control-plane, storage and worker in one. Lightweight, no-state pods (like the tunnels) still carry node affinity for `${STATELESS_NODE}` and a toleration for a `workload=stateless` taint, so pointing that setting at a new, tainted node moves them off the main box without touching any manifest.
 
 ### Core components
 
-- **GitOps & automation** — [Flux](https://fluxcd.io) reconciles the cluster from this repo, [Renovate](https://www.mend.io/renovate) raises PRs for chart and image updates, and [system-upgrade-controller](https://github.com/rancher/system-upgrade-controller) upgrades k3s itself inside a weeknight maintenance window. A `Taskfile` covers the day-to-day commands.
+- **GitOps & automation** — [Flux](https://fluxcd.io) reconciles the cluster from this repo, [Renovate](https://www.mend.io/renovate) raises PRs for chart and image updates, and [system-upgrade-controller](https://github.com/rancher/system-upgrade-controller) upgrades k3s itself inside a weeknight maintenance window. A `Taskfile` covers the day-to-day commands, and a bootstrap script rebuilds the whole cluster on a fresh machine.
 - **Networking & ingress** — [Traefik](https://traefik.io) handles ingress, [MetalLB](https://metallb.io) gives it a stable LAN IP, [AdGuard Home](https://adguard.com/adguard-home/overview.html) does local DNS and filtering, and [cloudflared](https://github.com/cloudflare/cloudflared) publishes the public services over Cloudflare Tunnels.
 - **Security & secrets** — [cert-manager](https://cert-manager.io) issues a wildcard certificate via Let's Encrypt DNS-01, [External Secrets](https://external-secrets.io) pulls every credential from [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) at runtime, and [Authentik](https://goauthentik.io) provides SSO and forward-auth. Namespaces enforce Pod Security Standards and each app carries a default-deny NetworkPolicy.
-- **Storage & data** — [Longhorn](https://longhorn.io) for block PVCs, [MinIO](https://min.io) as an in-cluster S3 store behind Nextcloud, and [VolSync](https://github.com/backube/volsync) + [restic](https://restic.net) for backups against an append-only server.
+- **Storage & data** — [Longhorn](https://longhorn.io) for block PVCs (installed by the bootstrap script, deliberately outside Flux), [MinIO](https://min.io) as an in-cluster S3 store behind Nextcloud, and [VolSync](https://github.com/backube/volsync) + [restic](https://restic.net) for backups against an append-only server.
 - **Observability** — [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts) for metrics and Alertmanager (routed to Telegram), [Loki](https://grafana.com/oss/loki/) + [Alloy](https://grafana.com/docs/alloy/latest/) for logs, and [Grafana](https://grafana.com) for dashboards.
 
 ### GitOps
@@ -63,8 +62,8 @@ Power & thermals:
 ```mermaid
 graph TD
     A[GitRepository: flux-system] -->|reconciles| B[Kustomization: infrastructure-configs]
-    B -->|namespaces · netpols · upgrade-plans| C[Kustomization: infrastructure-controllers]
-    C -->|cert-manager · ESO · MetalLB · VolSync · VPA| D[Kustomization: apps]
+    B -->|namespaces · netpols| C[Kustomization: infrastructure-controllers]
+    C -->|cert-manager · ESO · MetalLB · VolSync · VPA · Kyverno| D[Kustomization: apps]
     D -->|per-app ks.yaml| E[HelmReleases / Deployments]
 ```
 
@@ -73,9 +72,12 @@ graph TD
 ```
 clusters/homelab     # Flux entrypoint — bootstrap + root Kustomizations + cluster-settings
 infrastructure
-├── configs          # namespaces, network policies, k3s upgrade plans
-└── controllers      # cert-manager, external-secrets, metallb, volsync, vpa, coredns, ...
+├── configs          # namespaces, network policies
+└── controllers      # cert-manager, external-secrets, metallb, volsync, vpa, kyverno, system-upgrade, ...
 apps                 # one folder per workload (ks.yaml + manifests or HelmRelease)
+bootstrap            # from-zero install script, site.env template, pinned Longhorn
+docs                 # operator handbook (INSTRUCTIONS.md) and runbooks
+scripts              # Bitwarden rotation and settings validation helpers
 schema               # cluster diagrams (PlantUML source + rendered PNGs)
 ```
 
@@ -96,17 +98,19 @@ schema               # cluster diagrams (PlantUML source + rendered PNGs)
 
 ### Public — via Cloudflare Tunnel
 
-Each public service runs its own `cloudflared` deployment (named tunnel, token from Bitwarden), two replicas spread across both nodes with a `/ready` check on the edge connection so a disconnected tunnel actually fails its probe. Several sit behind Authentik forward-auth.
+Each public service runs its own `cloudflared` deployment (named tunnel, token from Bitwarden), two replicas behind a PodDisruptionBudget with a `/ready` check on the edge connection so a disconnected tunnel actually fails its probe. Several sit behind Authentik forward-auth.
 
 | Service | Purpose |
 | --- | --- |
 | [Jellyfin](https://jellyfin.org) | Film & TV streaming |
+| [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV / IPTV streams |
 | [Nextcloud](https://nextcloud.com) | General-purpose cloud storage (MinIO S3 backend) |
 | [Immich](https://immich.app) | Self-hosted photo backup |
 | [Navidrome](https://navidrome.org) | Music streaming |
+| [Matrix](https://matrix.org) | Chat — Synapse, Element Web and MAS for login |
 | [Authentik](https://goauthentik.io) | Centralized SSO / identity provider |
 | [Grafana](https://grafana.com) | Monitoring & dashboards |
-| [Headlamp](https://headlamp.dev) | Kubernetes UI |
+| Centralino | Home-automation panel for the ESP32 boards |
 
 ### Local — via Traefik
 
@@ -114,10 +118,11 @@ Served on the LAN at `*.local.gabro.ovh`; AdGuard rewrites those hostnames to Tr
 
 | Service | Purpose |
 | --- | --- |
-| \*arr stack | Prowlarr, Radarr, Sonarr, Lidarr, qBittorrent, Jellyseerr |
-| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Network filtering + local DNS |
+| \*arr stack | Prowlarr, Radarr, Sonarr, Lidarr, qBittorrent, Seerr, tvheadend |
+| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Network filtering + local DNS (admin UI also public, behind forward-auth) |
+| [Headlamp](https://headlamp.dev) | Kubernetes UI |
 | Pankha | Fan / thermal control dashboard |
-| Homepage | Service dashboard |
+| Homepage | Service dashboard (also public, behind forward-auth) |
 
 The nodes themselves are reachable only over VPN + SSH.
 
@@ -158,6 +163,18 @@ task rotate-tunnel       svc=jellyfin    # rotate a Cloudflare tunnel token
 task autorotate-minio-nc-user            # rotate the shared MinIO / Nextcloud S3 user
 task rotate-cloudflare-api               # rotate the cert-manager Cloudflare API token
 ```
+
+## Bootstrap
+
+The cluster can be rebuilt from zero on a fresh Ubuntu machine with one script. It reproduces the stack, not the data — restoring from restic is a separate step.
+
+```sh
+cp bootstrap/site.env.example bootstrap/site.env   # domains, IPs, disks, tokens (gitignored)
+task render-settings                               # write cluster-settings.yaml, then commit + push it
+task bootstrap                                     # sudo bootstrap/bootstrap.sh on the new machine
+```
+
+In order, the script prepares the host (packages, multipathd, mounts, hostPath dirs), installs a pinned k3s, seeds `cluster-settings` and the Bitwarden token, installs a pinned [Longhorn](https://longhorn.io) with its disk tags, then runs `flux bootstrap` and waits until the whole tree is Ready. It is idempotent, so a failed run can simply be re-run, and it refuses to touch a host that already runs workloads. Longhorn stays out of Flux on purpose: its chart ships the CRDs without a keep policy, so a pruned HelmRelease would delete every volume record with it. The external accounts (GitHub, Bitwarden, Cloudflare) and the post-install steps are covered in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md) §10.
 
 ## Operations
 
