@@ -23,7 +23,7 @@ spec:
         kubernetes.io/hostname: ${PRIMARY_NODE}
       containers:
         - name: radarr
-          image: lscr.io/linuxserver/radarr:6.4.4.10685-ls318
+          image: lscr.io/linuxserver/radarr:6.4.4.10685-ls319
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
