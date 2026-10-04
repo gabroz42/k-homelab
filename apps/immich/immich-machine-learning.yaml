@@ -51,6 +51,7 @@ spec:
               path: /ping
               port: 3003
             periodSeconds: 10
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /ping
