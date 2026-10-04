@@ -10,3 +10,7 @@ spec:
     name: navidrome
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        controlledResources: ["memory"]

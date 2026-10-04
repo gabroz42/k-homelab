@@ -10,3 +10,7 @@ spec:
     name: adguardhome
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        controlledResources: ["memory"]
