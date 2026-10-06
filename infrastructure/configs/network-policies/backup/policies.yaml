@@ -66,6 +66,25 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-host-backup-egress-rest-server
+spec:
+  podSelector:
+    matchLabels:
+      app: host-backup
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: restic-rest-server
+      ports:
+        - port: 8000
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-exporter-ingress-prometheus
 spec:
   podSelector:
