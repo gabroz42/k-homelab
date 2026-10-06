@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - backup-cronjobs.yaml
   - backup-externalsecret.yaml
+  - host-backup-cronjob.yaml
   - backup-prometheusrule.yaml
   - longhorn-volumesnapshotclass.yaml
   - restic-rest-server.yaml

@@ -1,0 +1,138 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: host-backup
+  namespace: backup
+spec:
+  schedule: "55 4 * * 1"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      activeDeadlineSeconds: 3600
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: host-backup
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/hostname: ${PRIMARY_NODE}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              image: restic/restic:0.19.1
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  REST_URL="rest:http://$REST_USER:$REST_PASSWORD@restic-rest-server.backup.svc.cluster.local:8000/host-configs"
+                  restic -r "$REST_URL" snapshots > /dev/null 2>&1 || restic -r "$REST_URL" init
+                  restic -r "$REST_URL" backup --host homelab \
+                    --exclude /src/dispatcharr/jwt \
+                    --exclude '**/logs' \
+                    --exclude '*.log*' \
+                    /src
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /tmp/restic-cache
+                - name: RESTIC_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-creds
+                      key: host-configs-password
+                - name: REST_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-creds
+                      key: rest-writer-user
+                - name: REST_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-creds
+                      key: rest-writer-password
+              volumeMounts:
+                - name: sonarr
+                  mountPath: /src/sonarr
+                  readOnly: true
+                - name: radarr
+                  mountPath: /src/radarr
+                  readOnly: true
+                - name: prowlarr
+                  mountPath: /src/prowlarr
+                  readOnly: true
+                - name: qbittorrent
+                  mountPath: /src/qbittorrent
+                  readOnly: true
+                - name: jellyseerr
+                  mountPath: /src/jellyseerr
+                  readOnly: true
+                - name: dispatcharr
+                  mountPath: /src/dispatcharr
+                  readOnly: true
+                - name: tvheadend
+                  mountPath: /src/tvheadend
+                  readOnly: true
+                - name: navidrome
+                  mountPath: /src/navidrome
+                  readOnly: true
+                - name: lidarr
+                  mountPath: /src/lidarr
+                  readOnly: true
+          volumes:
+            - name: sonarr
+              hostPath:
+                path: /var/lib/sonarr
+                type: Directory
+            - name: radarr
+              hostPath:
+                path: /var/lib/radarr
+                type: Directory
+            - name: prowlarr
+              hostPath:
+                path: /var/lib/prowlarr
+                type: Directory
+            - name: qbittorrent
+              hostPath:
+                path: /var/lib/qbittorrent
+                type: Directory
+            - name: jellyseerr
+              hostPath:
+                path: /var/lib/jellyseerr
+                type: Directory
+            - name: dispatcharr
+              hostPath:
+                path: /var/lib/dispatcharr
+                type: Directory
+            - name: tvheadend
+              hostPath:
+                path: /var/lib/tvheadend
+                type: Directory
+            - name: navidrome
+              hostPath:
+                path: /opt/navidrome
+                type: Directory
+            - name: lidarr
+              hostPath:
+                path: /opt/lidarr
+                type: Directory
