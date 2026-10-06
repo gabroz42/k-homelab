@@ -11,4 +11,5 @@ resources:
   - pankha-db
   - jellyfin-config
   - adguard
+  - host-configs
   - shared.yaml

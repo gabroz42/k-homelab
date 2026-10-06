@@ -78,6 +78,7 @@ spec:
                   prune_repo pankha-db        "$PANKHA_DB_PASSWORD"        || failed="$failed pankha-db"
                   prune_repo jellyfin-config  "$JELLYFIN_CONFIG_PASSWORD"  || failed="$failed jellyfin-config"
                   prune_repo adguard          "$ADGUARD_PASSWORD"          || failed="$failed adguard"
+                  prune_repo host-configs     "$HOST_CONFIGS_PASSWORD"     || failed="$failed host-configs"
 
                   if [ -n "$failed" ]; then
                     echo "== FAILED repos:$failed =="
@@ -137,6 +138,11 @@ spec:
                     secretKeyRef:
                       name: restic-admin-creds
                       key: adguard-password
+                - name: HOST_CONFIGS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: host-configs-password
           volumes:
             - name: data
               hostPath:
