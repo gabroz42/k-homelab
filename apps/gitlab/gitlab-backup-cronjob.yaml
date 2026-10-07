@@ -1,0 +1,99 @@
+# Nightly consistent GitLab backup: app data (DB dump + repos) and /etc/gitlab
+# (gitlab-secrets.json is required to restore) into the gitlab-backups PVC.
+# Files are chowned to git (uid 998) so the non-root VolSync mover can read them.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitlab-backup
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gitlab-backup
+  namespace: gitlab
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitlab-backup
+  namespace: gitlab
+subjects:
+  - kind: ServiceAccount
+    name: gitlab-backup
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: gitlab-backup
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitlab-backup
+  namespace: kube-system
+spec:
+  schedule: "30 3 * * *"
+  timeZone: ${TIMEZONE}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 86400
+      activeDeadlineSeconds: 3600
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: gitlab-backup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: gitlab-backup
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              image: alpine/k8s:1.37.1
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              env:
+                - name: HOME
+                  value: /tmp
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  kubectl -n gitlab exec deploy/gitlab -- /bin/sh -c '
+                    set -eu
+                    gitlab-backup create STRATEGY=copy SKIP=registry CRON=1
+                    mkdir -p /var/opt/gitlab/backups/etc
+                    gitlab-ctl backup-etc --delete-old-backups -p /var/opt/gitlab/backups/etc
+                    chown -R git:git /var/opt/gitlab/backups
+                    ls -l /var/opt/gitlab/backups /var/opt/gitlab/backups/etc
+                  '
