@@ -95,5 +95,6 @@ spec:
                     mkdir -p /var/opt/gitlab/backups/etc
                     gitlab-ctl backup-etc --delete-old-backups -p /var/opt/gitlab/backups/etc
                     chown -R git:git /var/opt/gitlab/backups
+                    chmod 0700 /var/opt/gitlab/backups/etc
                     ls -l /var/opt/gitlab/backups /var/opt/gitlab/backups/etc
                   '
