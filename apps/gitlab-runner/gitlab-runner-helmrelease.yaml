@@ -62,6 +62,9 @@ spec:
             cpu_request = "100m"
             memory_request = "128Mi"
             memory_limit = "1Gi"
+            # Jobs may raise their own limit via KUBERNETES_MEMORY_LIMIT (flate-diff renders the tree twice)
+            memory_request_overwrite_max_allowed = "2Gi"
+            memory_limit_overwrite_max_allowed = "4Gi"
             helper_cpu_request = "20m"
             helper_memory_request = "64Mi"
             helper_memory_limit = "256Mi"
