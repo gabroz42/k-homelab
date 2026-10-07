@@ -13,6 +13,12 @@ workflow:
       changes: *flux_tree
     - if: $CI_PIPELINE_SOURCE == "web"
 
+# Jobs run as uid 1000 with no capabilities (Kyverno), so tools go into a
+# job-local bin dir instead of /usr/local/bin, and nothing uses apk.
+variables:
+  HOME: /tmp
+  TOOLS_BIN: /tmp/bin
+
 default:
   interruptible: true
 
@@ -21,7 +27,8 @@ kubeconform:
   variables:
     KUBECONFORM_VERSION: v0.6.7
   before_script:
-    - curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar -xz -C /usr/local/bin kubeconform
+    - mkdir -p "$TOOLS_BIN" && export PATH="$TOOLS_BIN:$PATH"
+    - curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar -xz -C "$TOOLS_BIN" kubeconform
     - kubeconform -v
   script:
     - |
@@ -40,20 +47,25 @@ kubeconform:
       exit $fail
 
 .flate:
-  image: alpine:3.22
+  image: alpine/k8s:1.37.1
   variables:
     FLATE_VERSION: "0.6.5"
+    # rendering the whole Flux tree (twice for flate-diff) OOMs at the 1Gi runner default
+    KUBERNETES_MEMORY_REQUEST: 1Gi
+    KUBERNETES_MEMORY_LIMIT: 3Gi
+    # sha256 of flate_${FLATE_VERSION}_linux_amd64.tar.gz; bump together with the version
+    FLATE_SHA256: 37eb0cd91a6752340754375743aa616c263cd8367ce594abd42ee955e1ec0099
   before_script:
-    - apk add --no-cache curl git
     - |
       set -eu
+      mkdir -p "$TOOLS_BIN"
+      export PATH="$TOOLS_BIN:$PATH"
       tarball="flate_${FLATE_VERSION}_linux_amd64.tar.gz"
       base="https://github.com/home-operations/flate/releases/download/v${FLATE_VERSION}"
       cd /tmp
       curl -fsSLO "$base/$tarball"
-      curl -fsSLO "$base/$tarball.sha256"
-      sha256sum -c "$tarball.sha256"
-      tar -xzf "$tarball" -C /usr/local/bin flate
+      echo "$FLATE_SHA256  $tarball" | sha256sum -c -
+      tar -xzf "$tarball" -C "$TOOLS_BIN" flate
       cd "$CI_PROJECT_DIR"
       flate --version
 
