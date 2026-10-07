@@ -253,9 +253,9 @@ data:
         - Cloudflare Dashboard:
             - abbr: CF
               href: https://dash.cloudflare.com
-        - GitHub Repo:
-            - abbr: GH
-              href: https://github.com/Gabroz4/k-homelab
+        - GitLab Repo:
+            - abbr: GL
+              href: https://gitlab.${PUBLIC_DOMAIN}/server/k-homelab
 
     - Docs:
         - Kubernetes Docs:
