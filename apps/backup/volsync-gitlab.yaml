@@ -1,0 +1,71 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: volsync-restic-gitlab
+  namespace: gitlab
+spec:
+  refreshInterval: 13h35m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: bitwarden-secretsmanager
+  target:
+    name: volsync-restic-gitlab
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        RESTIC_REPOSITORY: "rest:http://{{ .writerUser }}:{{ .writerPassword }}@restic-rest-server.backup.svc.cluster.local:8000/gitlab"
+        RESTIC_PASSWORD: "{{ .resticPassword }}"
+  data:
+    - secretKey: writerUser
+      remoteRef:
+        key: backup/restic-rest-server/writer-user
+    - secretKey: writerPassword
+      remoteRef:
+        key: backup/restic-rest-server/writer-password
+    - secretKey: resticPassword
+      remoteRef:
+        key: backup/restic-gitlab/password
+---
+# Ships only the gitlab-backups PVC (consistent `gitlab-backup` archives + /etc/gitlab
+# tarballs), never the live gitlab-data volume. Weekly, inside the Monday backup-HDD
+# spin-up window (UTC) right after immich-library at 04:50; the daily 03:30 Europe/Rome
+# gitlab-backup CronJob writes to Longhorn only, so it never wakes the backup disk.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  sourcePVC: gitlab-backups
+  trigger:
+    schedule: "52 4 * * 1"
+  restic:
+    repository: volsync-restic-gitlab
+    copyMethod: Direct
+    cacheCapacity: 1Gi
+    cacheStorageClassName: longhorn-single
+    pruneIntervalDays: 3650
+    retain:
+      daily: 7
+      weekly: 4
+      monthly: 12
+    moverSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 998
+      runAsGroup: 998
+      seccompProfile:
+        type: RuntimeDefault
+    moverResources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    moverAffinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: gitlab
+            topologyKey: kubernetes.io/hostname

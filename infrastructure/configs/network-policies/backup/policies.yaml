@@ -100,3 +100,24 @@ spec:
       ports:
         - port: 8001
           protocol: TCP
+---
+# Separate from allow-rest-server-ingress so it could be applied while Flux was cut off
+# from its source (GitHub suspension, Oct 2026); fold into that list once GitOps is back.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-rest-server-ingress-gitlab
+spec:
+  podSelector:
+    matchLabels:
+      app: restic-rest-server
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitlab
+      ports:
+        - port: 8000
+          protocol: TCP
