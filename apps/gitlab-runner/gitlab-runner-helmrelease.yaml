@@ -48,6 +48,7 @@ spec:
         [[runners]]
           request_concurrency = 2
           clone_url = "http://gitlab.gitlab.svc.cluster.local"
+          environment = ["HOME=/tmp"]
           [runners.feature_flags]
             FF_USE_ADVANCED_POD_SPEC_CONFIGURATION = true
           [runners.kubernetes]
