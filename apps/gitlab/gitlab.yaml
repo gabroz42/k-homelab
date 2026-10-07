@@ -58,9 +58,13 @@ spec:
                 gitlab_sshd['enable'] = false
                 gitlab_rails['gitlab_shell_ssh_port'] = 22
 
-                # Trim the footprint for a single-user homelab
-                puma['worker_processes'] = 2
-                sidekiq['concurrency'] = 10
+                # Trim the footprint for a single-user homelab, per GitLab's
+                # "memory-constrained environments" guide: Puma in single mode,
+                # fewer Sidekiq threads, and jemalloc returning freed memory sooner.
+                puma['worker_processes'] = 0
+                sidekiq['concurrency'] = 5
+                gitlab_rails['env'] = { 'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000' }
+                gitaly['env'] = { 'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000', 'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '2' }
                 prometheus_monitoring['enable'] = false
                 registry['enable'] = false
                 gitlab_pages['enable'] = false
@@ -121,10 +125,10 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 3Gi
+              memory: 2Gi
             limits:
               cpu: "4"
-              memory: 8Gi
+              memory: 6Gi
           volumeMounts:
             - name: config
               mountPath: /etc/gitlab
