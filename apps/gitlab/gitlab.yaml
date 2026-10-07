@@ -1,0 +1,154 @@
+# GitLab CE omnibus (single pod). Login goes through Authentik OIDC; the client
+# credentials come from the gitlab-oidc Secret (keys: client-id, client-secret).
+# Omnibus must start as root (runit + chown of /etc/gitlab, /var/opt/gitlab), see
+# apps/kyverno-policies/exception-gitlab.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gitlab
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: gitlab
+          image: gitlab/gitlab-ce:19.4.1-ce.0
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: TZ
+              value: ${TIMEZONE}
+            - name: GITLAB_OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-oidc
+                  key: client-id
+            - name: GITLAB_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-oidc
+                  key: client-secret
+            - name: GITLAB_OMNIBUS_CONFIG
+              value: |
+                external_url 'https://gitlab.${PUBLIC_DOMAIN}'
+                letsencrypt['enable'] = false
+                nginx['listen_port'] = 80
+                nginx['listen_https'] = false
+                nginx['proxy_set_headers'] = { 'X-Forwarded-Proto' => 'https', 'X-Forwarded-Ssl' => 'on' }
+                nginx['real_ip_trusted_addresses'] = ['${POD_CIDR}']
+                nginx['real_ip_header'] = 'X-Forwarded-For'
+                gitlab_rails['trusted_proxies'] = ['${POD_CIDR}']
+                gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', '${POD_CIDR}']
+                gitlab_rails['time_zone'] = '${TIMEZONE}'
+
+                # HTTPS only: SSH is not exposed outside the pod
+                gitlab_sshd['enable'] = false
+                gitlab_rails['gitlab_shell_ssh_port'] = 22
+
+                # Trim the footprint for a single-user homelab
+                puma['worker_processes'] = 2
+                sidekiq['concurrency'] = 10
+                prometheus_monitoring['enable'] = false
+                registry['enable'] = false
+                gitlab_pages['enable'] = false
+                gitlab_kas['enable'] = false
+                gitlab_rails['usage_ping_enabled'] = false
+
+                # Local copies kept 3 days; restic holds the history
+                gitlab_rails['backup_keep_time'] = 259200
+
+                # Authentik OIDC
+                gitlab_rails['omniauth_enabled'] = true
+                gitlab_rails['omniauth_allow_single_sign_on'] = ['openid_connect']
+                gitlab_rails['omniauth_block_auto_created_users'] = false
+                gitlab_rails['omniauth_auto_link_user'] = ['openid_connect']
+                gitlab_rails['omniauth_auto_sign_in_with_provider'] = 'openid_connect'
+                gitlab_rails['omniauth_providers'] = [
+                  {
+                    name: 'openid_connect',
+                    label: 'Authentik',
+                    args: {
+                      name: 'openid_connect',
+                      scope: ['openid', 'profile', 'email'],
+                      response_type: 'code',
+                      issuer: 'https://authentik.${PUBLIC_DOMAIN}/application/o/gitlab/',
+                      discovery: true,
+                      client_auth_method: 'query',
+                      uid_field: 'preferred_username',
+                      send_scope_to_token_endpoint: 'false',
+                      pkce: true,
+                      client_options: {
+                        identifier: ENV['GITLAB_OIDC_CLIENT_ID'],
+                        secret: ENV['GITLAB_OIDC_CLIENT_SECRET'],
+                        redirect_uri: 'https://gitlab.${PUBLIC_DOMAIN}/users/auth/openid_connect/callback'
+                      }
+                    }
+                  }
+                ]
+          startupProbe:
+            httpGet:
+              path: /-/liveness
+              port: http
+            periodSeconds: 15
+            failureThreshold: 80
+          livenessProbe:
+            httpGet:
+              path: /-/liveness
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /-/readiness
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 500m
+              memory: 3Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/gitlab
+            - name: data
+              mountPath: /var/opt/gitlab
+            - name: backups
+              mountPath: /var/opt/gitlab/backups
+            - name: logs
+              mountPath: /var/log/gitlab
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: gitlab-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: gitlab-data
+        - name: backups
+          persistentVolumeClaim:
+            claimName: gitlab-backups
+        - name: logs
+          emptyDir: {}
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
