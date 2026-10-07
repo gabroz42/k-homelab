@@ -50,6 +50,8 @@ kubeconform:
   image: alpine/k8s:1.37.1
   variables:
     FLATE_VERSION: "0.6.5"
+    # sha256 of flate_${FLATE_VERSION}_linux_amd64.tar.gz; bump together with the version
+    FLATE_SHA256: 37eb0cd91a6752340754375743aa616c263cd8367ce594abd42ee955e1ec0099
   before_script:
     - |
       set -eu
@@ -59,8 +61,7 @@ kubeconform:
       base="https://github.com/home-operations/flate/releases/download/v${FLATE_VERSION}"
       cd /tmp
       curl -fsSLO "$base/$tarball"
-      curl -fsSLO "$base/$tarball.sha256"
-      sha256sum -c "$tarball.sha256"
+      echo "$FLATE_SHA256  $tarball" | sha256sum -c -
       tar -xzf "$tarball" -C "$TOOLS_BIN" flate
       cd "$CI_PROJECT_DIR"
       flate --version
