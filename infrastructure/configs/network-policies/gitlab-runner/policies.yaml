@@ -1,0 +1,70 @@
+# Runner manager: talks to the GitLab API and creates job pods via the apiserver.
+# Job pods: clone from GitLab over the in-cluster Service and download tools/schemas
+# from the internet. Nothing needs ingress.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-to-gitlab
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitlab
+          podSelector:
+            matchLabels:
+              app: gitlab
+      ports:
+        - port: 80
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apiserver
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab-runner
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.43.0.1/32
+      ports:
+        - port: 443
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: ${PRIMARY_NODE_IP}/32
+      ports:
+        - port: 6443
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-job-internet
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab-runner-job
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - ${LAN_SUPERNET}
+      ports:
+        - port: 443
+          protocol: TCP
+        - port: 80
+          protocol: TCP
