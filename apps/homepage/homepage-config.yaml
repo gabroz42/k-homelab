@@ -101,6 +101,13 @@ data:
             namespace: matrix
             app: synapse
             podSelector: app=synapse
+        - GitLab:
+            href: https://gitlab.${PUBLIC_DOMAIN}
+            description: Git hosting and CI
+            icon: gitlab.png
+            namespace: gitlab
+            app: gitlab
+            podSelector: app=gitlab
 
     - Media:
         - Jellyfin:
