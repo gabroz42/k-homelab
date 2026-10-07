@@ -91,3 +91,23 @@ spec:
       ports:
         - port: 80
           protocol: TCP
+---
+# Renovate (API + git clone/push over the in-cluster Service).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-from-renovate
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: renovate
+      ports:
+        - port: 80
+          protocol: TCP

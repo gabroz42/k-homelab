@@ -142,3 +142,12 @@ metadata:
 spec:
   interval: 1h
   url: https://charts.gitlab.io
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: renovate
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://docs.renovatebot.com/helm-charts
