@@ -71,3 +71,23 @@ spec:
       ports:
         - port: 80
           protocol: TCP
+---
+# GitLab Runner manager (API) and CI job pods (git clone, artifacts).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-from-gitlab-runner
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitlab-runner
+      ports:
+        - port: 80
+          protocol: TCP
