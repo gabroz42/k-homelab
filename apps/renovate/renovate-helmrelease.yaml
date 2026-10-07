@@ -30,7 +30,7 @@ spec:
       concurrencyPolicy: Forbid
       successfulJobsHistoryLimit: 1
       failedJobsHistoryLimit: 2
-      jobBackoffLimit: 0
+      jobBackoffLimit: "0"
       activeDeadlineSeconds: 3600
     existingSecret: renovate
     renovate:
