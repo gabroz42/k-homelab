@@ -30,6 +30,7 @@ resources:
   - pankha/ks.yaml
   - prometheus/ks.yaml
   - prometheus/rules/ks.yaml
+  - renovate/ks.yaml
   - servarr/ks.yaml
   - traefik/ks.yaml
   - upgrade-plans/ks.yaml

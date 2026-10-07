@@ -1,0 +1,73 @@
+# Self-hosted Renovate for the in-cluster GitLab (replaces the hosted Mend GitHub App).
+# Runs daily so Dependency Dashboard checkboxes and rebases get picked up; new update MRs
+# are still limited to the Monday window by the `schedule` in renovate.json.
+# No GitHub token: github.com lookups (changelogs, github-releases datasource) run
+# unauthenticated at 60 req/h, which is enough for one repo.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: renovate
+  namespace: renovate
+spec:
+  interval: 1h
+  releaseName: renovate
+  chart:
+    spec:
+      chart: renovate
+      version: "46.345.0"
+      sourceRef:
+        kind: HelmRepository
+        name: renovate
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+    cleanupOnFail: true
+  values:
+    cronjob:
+      schedule: "0 5 * * *"
+      timeZone: ${TIMEZONE}
+      concurrencyPolicy: Forbid
+      successfulJobsHistoryLimit: 1
+      failedJobsHistoryLimit: 2
+      jobBackoffLimit: 0
+      activeDeadlineSeconds: 3600
+    existingSecret: renovate
+    renovate:
+      config: |
+        {
+          "platform": "gitlab",
+          "endpoint": "http://gitlab.gitlab.svc.cluster.local/api/v4",
+          "gitUrl": "endpoint",
+          "autodiscover": false,
+          "repositories": ["server/k-homelab"],
+          "onboarding": false,
+          "requireConfig": "required",
+          "gitAuthor": "Renovate Bot <renovate-bot@${PUBLIC_DOMAIN}>"
+        }
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 12021
+      runAsGroup: 0
+      fsGroup: 12021
+      seccompProfile:
+        type: RuntimeDefault
+    pod:
+      labels:
+        app: renovate
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
