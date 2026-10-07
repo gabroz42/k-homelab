@@ -4,6 +4,7 @@ resources:
   - exception-apache-root-init.yaml
   - exception-cache-nudge.yaml
   - exception-filecap-binaries.yaml
+  - exception-gitlab.yaml
   - exception-host-log-collector.yaml
   - exception-privileged-workloads.yaml
   - exception-root-init-workloads.yaml

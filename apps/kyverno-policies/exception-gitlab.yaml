@@ -1,0 +1,20 @@
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: gitlab-omnibus
+  namespace: kyverno
+spec:
+  evaluationMode: Kyverno
+  policyRefs:
+    - kind: ValidatingPolicy
+      name: require-run-as-non-root
+    - kind: ValidatingPolicy
+      name: require-drop-all-capabilities
+    - kind: ValidatingPolicy
+      name: require-no-privilege-escalation
+  reportResult: skip
+  matchConditions:
+    - name: gitlab-omnibus-runit-root
+      expression: >-
+        object.metadata.namespace == 'gitlab' && (object.metadata.name == 'gitlab' ||
+        object.metadata.name.startsWith('gitlab-'))
