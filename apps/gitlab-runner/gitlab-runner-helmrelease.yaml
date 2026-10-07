@@ -52,6 +52,7 @@ spec:
       secret: gitlab-runner
       config: |
         [[runners]]
+          request_concurrency = 2
           clone_url = "http://gitlab.gitlab.svc.cluster.local"
           [runners.feature_flags]
             FF_USE_ADVANCED_POD_SPEC_CONFIGURATION = true
