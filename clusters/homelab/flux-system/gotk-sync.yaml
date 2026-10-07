@@ -9,8 +9,6 @@ spec:
   interval: 1m0s
   ref:
     branch: main
-  # Self-hosted GitLab since the GitHub account was suspended (Oct 2026). The repo is
-  # public, so source-controller clones anonymously over the in-cluster Service.
   url: http://gitlab.gitlab.svc.cluster.local/server/k-homelab.git
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
