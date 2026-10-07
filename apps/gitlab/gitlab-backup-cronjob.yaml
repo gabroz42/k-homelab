@@ -1,6 +1,3 @@
-# Nightly consistent GitLab backup: app data (DB dump + repos) and /etc/gitlab
-# (gitlab-secrets.json is required to restore) into the gitlab-backups PVC.
-# Files are chowned to git (uid 998) so the non-root VolSync mover can read them.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

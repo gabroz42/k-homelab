@@ -27,10 +27,6 @@ spec:
       remoteRef:
         key: backup/restic-gitlab/password
 ---
-# Ships only the gitlab-backups PVC (consistent `gitlab-backup` archives + /etc/gitlab
-# tarballs), never the live gitlab-data volume. Weekly, inside the Monday backup-HDD
-# spin-up window (UTC) right after immich-library at 04:50; the daily 03:30 Europe/Rome
-# gitlab-backup CronJob writes to Longhorn only, so it never wakes the backup disk.
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:

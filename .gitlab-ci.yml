@@ -1,6 +1,3 @@
-# Ported from .github/workflows/{kubeconform,flate}.yaml.
-# Runs on pushes to main and on merge requests targeting main that touch the Flux tree.
-
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
@@ -13,8 +10,6 @@ workflow:
       changes: *flux_tree
     - if: $CI_PIPELINE_SOURCE == "web"
 
-# Jobs run as uid 1000 with no capabilities (Kyverno), so tools go into a
-# job-local bin dir instead of /usr/local/bin, and nothing uses apk.
 variables:
   HOME: /tmp
   TOOLS_BIN: /tmp/bin
@@ -50,10 +45,8 @@ kubeconform:
   image: alpine/k8s:1.37.1
   variables:
     FLATE_VERSION: "0.6.5"
-    # rendering the whole Flux tree (twice for flate-diff) OOMs at the 1Gi runner default
     KUBERNETES_MEMORY_REQUEST: 1Gi
     KUBERNETES_MEMORY_LIMIT: 3Gi
-    # sha256 of flate_${FLATE_VERSION}_linux_amd64.tar.gz; bump together with the version
     FLATE_SHA256: 37eb0cd91a6752340754375743aa616c263cd8367ce594abd42ee955e1ec0099
   before_script:
     - |

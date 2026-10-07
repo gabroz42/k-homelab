@@ -1,8 +1,3 @@
-# Self-hosted Renovate for the in-cluster GitLab (replaces the hosted Mend GitHub App).
-# Runs daily so Dependency Dashboard checkboxes and rebases get picked up; new update MRs
-# are still limited to the Monday window by the `schedule` in renovate.json.
-# No GitHub token: github.com lookups (changelogs, github-releases datasource) run
-# unauthenticated at 60 req/h, which is enough for one repo.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
