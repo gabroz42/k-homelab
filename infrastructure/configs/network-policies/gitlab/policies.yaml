@@ -1,5 +1,3 @@
-# OIDC discovery/token calls go to https://authentik.${PUBLIC_DOMAIN}, which may
-# resolve to Cloudflare (public) or to Traefik on the LAN (AdGuard rewrite).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -48,8 +46,6 @@ spec:
         - port: 8443
           protocol: TCP
 ---
-# Flux source-controller clones the repo over the in-cluster Service
-# (clusters/homelab/flux-system/gotk-sync.yaml).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -72,7 +68,6 @@ spec:
         - port: 80
           protocol: TCP
 ---
-# GitLab Runner manager (API) and CI job pods (git clone, artifacts).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -92,7 +87,6 @@ spec:
         - port: 80
           protocol: TCP
 ---
-# Renovate (API + git clone/push over the in-cluster Service).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

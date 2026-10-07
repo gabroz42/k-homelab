@@ -1,7 +1,3 @@
-# GitLab CE omnibus (single pod). Login goes through Authentik OIDC; the client
-# credentials come from the gitlab-oidc Secret (keys: client-id, client-secret).
-# Omnibus must start as root (runit + chown of /etc/gitlab, /var/opt/gitlab), see
-# apps/kyverno-policies/exception-gitlab.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -54,13 +50,9 @@ spec:
                 gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', '${POD_CIDR}']
                 gitlab_rails['time_zone'] = '${TIMEZONE}'
 
-                # HTTPS only: SSH is not exposed outside the pod
                 gitlab_sshd['enable'] = false
                 gitlab_rails['gitlab_shell_ssh_port'] = 22
 
-                # Trim the footprint for a single-user homelab, per GitLab's
-                # "memory-constrained environments" guide: Puma in single mode,
-                # fewer Sidekiq threads, and jemalloc returning freed memory sooner.
                 puma['worker_processes'] = 0
                 sidekiq['concurrency'] = 5
                 gitlab_rails['env'] = { 'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000' }
@@ -71,10 +63,8 @@ spec:
                 gitlab_kas['enable'] = false
                 gitlab_rails['usage_ping_enabled'] = false
 
-                # Local copies kept 3 days; restic holds the history
                 gitlab_rails['backup_keep_time'] = 259200
 
-                # Authentik OIDC
                 gitlab_rails['omniauth_enabled'] = true
                 gitlab_rails['omniauth_allow_single_sign_on'] = ['openid_connect']
                 gitlab_rails['omniauth_block_auto_created_users'] = false

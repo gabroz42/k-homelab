@@ -1,5 +1,3 @@
-# GitLab API + git over the in-cluster Service, and registries / chart repos /
-# github.com on the internet for version lookups.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
