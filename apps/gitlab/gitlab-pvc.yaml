@@ -28,8 +28,6 @@ spec:
     requests:
       storage: 30Gi
 ---
-# Target of `gitlab-backup create` + `gitlab-ctl backup-etc` (apps/gitlab/gitlab-backup-cronjob.yaml);
-# VolSync ships this volume, not gitlab-data, to restic (apps/backup/volsync-gitlab.yaml).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
