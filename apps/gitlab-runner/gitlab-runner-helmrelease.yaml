@@ -1,9 +1,3 @@
-# Kubernetes-executor runner for the in-cluster GitLab. The runner is created in GitLab
-# (Admin → CI/CD → Runners, instance runner, "Run untagged jobs") and its glrt- token
-# lives in BW at gitlab-runner/gitlab-runner/runner-token.
-# Job pods are shaped to pass the Kyverno policies without an exception: non-root pod,
-# ALL caps dropped and no privilege escalation on build/helper containers, and a pod-level
-# RuntimeDefault seccomp profile added through the advanced pod_spec patch.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -62,7 +56,6 @@ spec:
             cpu_request = "100m"
             memory_request = "128Mi"
             memory_limit = "1Gi"
-            # Jobs may raise their own limit via KUBERNETES_MEMORY_LIMIT (flate-diff renders the tree twice)
             memory_request_overwrite_max_allowed = "2Gi"
             memory_limit_overwrite_max_allowed = "4Gi"
             helper_cpu_request = "20m"

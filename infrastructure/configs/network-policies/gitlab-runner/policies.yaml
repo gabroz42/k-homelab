@@ -1,6 +1,3 @@
-# Runner manager: talks to the GitLab API and creates job pods via the apiserver.
-# Job pods: clone from GitLab over the in-cluster Service and download tools/schemas
-# from the internet. Nothing needs ingress.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
