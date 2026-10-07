@@ -17,4 +17,5 @@ resources:
   - volsync-matrix.yaml
   - volsync-jellyfin.yaml
   - volsync-adguard.yaml
+  - volsync-gitlab.yaml
   - volsync-servicemonitor.yaml
