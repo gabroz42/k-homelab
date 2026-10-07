@@ -8,9 +8,8 @@ _My home Kubernetes cluster — fully self-hosted, GitOps-managed, and reconcile
 [![Flux](https://img.shields.io/badge/Flux-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
 [![Renovate](https://img.shields.io/badge/Renovate-1A1F6C?style=for-the-badge&logo=renovate&logoColor=white)](https://www.mend.io/renovate)
 
-[![Kubeconform](https://img.shields.io/github/actions/workflow/status/Gabroz4/k-homelab/kubeconform.yaml?branch=main&style=for-the-badge&logo=kubernetes&logoColor=white&label=kubeconform)](https://github.com/Gabroz4/k-homelab/actions/workflows/kubeconform.yaml)
-[![Flate](https://img.shields.io/github/actions/workflow/status/Gabroz4/k-homelab/flate.yaml?branch=main&style=for-the-badge&logo=flux&logoColor=white&label=flate)](https://github.com/Gabroz4/k-homelab/actions/workflows/flate.yaml)
-[![Last Commit](https://img.shields.io/github/last-commit/Gabroz4/k-homelab?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Gabroz4/k-homelab/commits/main)
+[![CI](https://img.shields.io/gitlab/pipeline-status/server%2Fk-homelab?gitlab_url=https%3A%2F%2Fgitlab.gabro.ovh&branch=main&style=for-the-badge&logo=gitlab&logoColor=white&label=kubeconform%20%2B%20flate)](https://gitlab.gabro.ovh/server/k-homelab/-/pipelines?ref=main)
+[![Last Commit](https://img.shields.io/gitlab/last-commit/server%2Fk-homelab?gitlab_url=https%3A%2F%2Fgitlab.gabro.ovh&branch=main&style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.gabro.ovh/server/k-homelab/-/commits/main)
 
 </div>
 
@@ -185,4 +184,4 @@ task reconcile # pull latest from Git and reconcile all root Kustomizations
 task tree name=nextcloud   # list every resource a Kustomization manages
 ```
 
-Every push is validated in CI by [kubeconform](https://github.com/yannh/kubeconform) (schema validation) and [flate](https://github.com/home-operations/flate) (offline build and diff of the Flux tree).
+Every push to `main` and every merge request is validated in GitLab CI (`.gitlab-ci.yml`) by [kubeconform](https://github.com/yannh/kubeconform) (schema validation) and [flate](https://github.com/home-operations/flate) (offline build and diff of the Flux tree).

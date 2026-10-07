@@ -1,0 +1,73 @@
+# OIDC discovery/token calls go to https://authentik.${PUBLIC_DOMAIN}, which may
+# resolve to Cloudflare (public) or to Traefik on the LAN (AdGuard rewrite).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gitlab-internet
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - ${LAN_SUPERNET}
+      ports:
+        - port: 443
+          protocol: TCP
+        - port: 80
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gitlab-egress-to-traefik
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 8000
+          protocol: TCP
+        - port: 8443
+          protocol: TCP
+---
+# Flux source-controller clones the repo over the in-cluster Service
+# (clusters/homelab/flux-system/gotk-sync.yaml).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-from-flux-source
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flux-system
+          podSelector:
+            matchLabels:
+              app: source-controller
+      ports:
+        - port: 80
+          protocol: TCP
