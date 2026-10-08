@@ -81,6 +81,11 @@ spec:
               allow_privilege_escalation = false
               [runners.kubernetes.init_permissions_container_security_context.capabilities]
                 drop = ["ALL"]
+            # CI `services:` (e.g. postgres) — without this Kyverno rejects the job pod
+            [runners.kubernetes.service_container_security_context]
+              allow_privilege_escalation = false
+              [runners.kubernetes.service_container_security_context.capabilities]
+                drop = ["ALL"]
             [[runners.kubernetes.pod_spec]]
               name = "seccomp-runtime-default"
               patch_type = "strategic"
