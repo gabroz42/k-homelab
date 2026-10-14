@@ -122,6 +122,28 @@ tasks:
     cmds:
       - flux -n {{.ns}} resume helmrelease {{.name}}
 
+  failover:
+    desc: 'In-cluster GitLab down — point the flux-system GitRepository at the gitlab.com mirror (suspends the flux-system Kustomization so gotk-sync.yaml cannot revert it)'
+    cmds:
+      - kubectl -n flux-system wait gitrepository/gitlab-com-mirror --for=condition=Ready --timeout=10s
+      - flux -n flux-system suspend kustomization flux-system
+      - |
+        URL=$(kubectl -n flux-system get gitrepository gitlab-com-mirror -o jsonpath='{.spec.url}')
+        kubectl -n flux-system patch gitrepository flux-system --type=merge \
+          -p "{\"spec\":{\"url\":\"$URL\",\"secretRef\":{\"name\":\"gitlab-com-mirror\"}}}"
+      - flux -n flux-system reconcile source git flux-system
+      - echo "Flux now follows gitlab.com. Push urgent fixes there directly; before 'task failback', push them to the in-cluster GitLab too, or its mirror will overwrite them."
+
+  failback:
+    desc: 'In-cluster GitLab back — restore the flux-system GitRepository from gotk-sync.yaml and resume the flux-system Kustomization'
+    cmds:
+      - |
+        URL=$(awk '/^  url:/{print $2; exit}' clusters/homelab/flux-system/gotk-sync.yaml)
+        kubectl -n flux-system patch gitrepository flux-system --type=json \
+          -p "[{\"op\":\"replace\",\"path\":\"/spec/url\",\"value\":\"$URL\"},{\"op\":\"remove\",\"path\":\"/spec/secretRef\"}]"
+      - flux -n flux-system reconcile source git flux-system
+      - flux -n flux-system resume kustomization flux-system
+
   webhook-url:
     desc: Print the GitLab webhook URL to paste into the project's webhook settings
     cmds:
