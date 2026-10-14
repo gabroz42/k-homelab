@@ -347,6 +347,119 @@ data:
             "legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"]},
             "tooltip": {"mode": "multi"}
           }
+        },
+        {
+          "type": "row",
+          "title": "Fans",
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 28},
+          "id": 10,
+          "panels": []
+        },
+        {
+          "type": "xychart",
+          "title": "Fan Curves (duty vs control temperature, last 7d)",
+          "description": "Observed fan curves: each point is one 5-minute sample of a fan's PWM duty plotted against the temperature pankha controls on (highest visible sensor: k10temp Tctl, NVMe, connected NCT6793 channels; phantom inputs excluded). All fans use pankha's 'Optimal' profile, edited in the pankha UI.",
+          "gridPos": {"h": 12, "w": 12, "x": 0, "y": 29},
+          "id": 11,
+          "timeFrom": "7d",
+          "interval": "5m",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "max(node_hwmon_temp_celsius{chip=~\"nvme_.*|pci0000:00_0000:00:18_3\"} or node_hwmon_temp_celsius{chip=~\"platform_nct6775.*\", sensor=~\"temp2|temp3|temp7|temp13\"})",
+              "legendFormat": "Control temp",
+              "refId": "A"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "label_replace(node_hwmon_pwm{chip=~\"platform_nct6775.*\"} / 2.55, \"fan\", \"Fan $1\", \"sensor\", \"pwm(\\\\d+)\")",
+              "legendFormat": "{{fan}}",
+              "refId": "B"
+            }
+          ],
+          "transformations": [
+            {"id": "joinByField", "options": {"byField": "Time", "mode": "inner"}}
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": {"show": "points", "pointSize": {"fixed": 4}, "fillOpacity": 50}
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Control temp"},
+                "properties": [
+                  {"id": "unit", "value": "celsius"},
+                  {"id": "min", "value": 20},
+                  {"id": "max", "value": 90}
+                ]
+              }
+            ]
+          },
+          "options": {
+            "mapping": "auto",
+            "series": [{}],
+            "legend": {"showLegend": true, "displayMode": "list", "placement": "bottom"},
+            "tooltip": {"mode": "single"}
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Fan Duty (%)",
+          "gridPos": {"h": 6, "w": 12, "x": 12, "y": 29},
+          "id": 12,
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "label_replace(node_hwmon_pwm{chip=~\"platform_nct6775.*\"} / 2.55, \"fan\", \"Fan $1\", \"sensor\", \"pwm(\\\\d+)\")",
+              "legendFormat": "{{fan}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": {"fillOpacity": 0, "lineWidth": 2, "showPoints": "never"}
+            }
+          },
+          "options": {
+            "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
+            "tooltip": {"mode": "multi"}
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Fan Speed (RPM)",
+          "description": "Fans 3-5 have no tachometer signal and always read 0 RPM.",
+          "gridPos": {"h": 6, "w": 12, "x": 12, "y": 35},
+          "id": 13,
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "label_replace(node_hwmon_fan_rpm{chip=~\"platform_nct6775.*\"}, \"fan\", \"Fan $1\", \"sensor\", \"fan(\\\\d+)\")",
+              "legendFormat": "{{fan}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "rotrpm",
+              "min": 0,
+              "custom": {"fillOpacity": 0, "lineWidth": 2, "showPoints": "never"}
+            }
+          },
+          "options": {
+            "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
+            "tooltip": {"mode": "multi"}
+          }
         }
       ],
       "refresh": "30s",
