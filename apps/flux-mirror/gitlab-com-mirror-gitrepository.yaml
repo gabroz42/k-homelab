@@ -1,0 +1,13 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: gitlab-com-mirror
+  namespace: flux-system
+spec:
+  interval: 1h
+  timeout: 2m
+  ref:
+    branch: main
+  url: https://gitlab.com/work2530641/server/k-homelab.git
+  secretRef:
+    name: gitlab-com-mirror
