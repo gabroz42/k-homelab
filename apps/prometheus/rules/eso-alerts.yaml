@@ -1,0 +1,50 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: external-secrets-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: external-secrets.rules
+      rules:
+        - alert: ExternalSecretSyncFailed
+          expr: >
+            max by (namespace, name) (
+              externalsecret_status_condition{condition="Ready", status="False"}
+            ) == 1
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ExternalSecret not syncing ({{ $labels.namespace }}/{{ $labels.name }})"
+            description: >
+              ExternalSecret {{ $labels.namespace }}/{{ $labels.name }} has been
+              Ready=False for 30 minutes; the target Secret keeps its last synced
+              data. Usually a missing or renamed Bitwarden key — check
+              `kubectl describe externalsecret -n {{ $labels.namespace }} {{ $labels.name }}`.
+        - alert: ClusterSecretStoreNotReady
+          expr: >
+            max by (name) (
+              clustersecretstore_status_condition{condition="Ready", status="False"}
+            ) == 1
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "ClusterSecretStore {{ $labels.name }} not ready"
+            description: >
+              ClusterSecretStore {{ $labels.name }} has been Ready=False for 15
+              minutes, so no ExternalSecret can sync. Check the bitwarden-sdk-server
+              pod and the external-secrets/bitwarden-access-token Secret.
+        - alert: ExternalSecretsControllerDown
+          expr: absent(up{namespace="external-secrets", pod=~"external-secrets-[a-z0-9]+-[a-z0-9]+"} == 1)
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "External Secrets controller is down"
+            description: >
+              No healthy external-secrets controller has been scraped for 15
+              minutes. Secrets are not refreshing and failures above cannot fire.
