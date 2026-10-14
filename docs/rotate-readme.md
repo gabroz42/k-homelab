@@ -7,7 +7,7 @@ How to rotate every secret in this cluster. Read this before doing a rotation pa
 ## 0. The two-line summary
 
 - Secrets whose value is purely internal (passwords, signing keys) can rotate **end-to-end with one command** via the `autorotate-*` tasks — they generate a fresh value, write it to Bitwarden via `bws`, force-sync the ExternalSecret, and roll consumers. No BW UI step.
-- Secrets whose value comes from a third party (Cloudflare, GitHub, Telegram, Authentik UI) still need the manual `rotate-*` flow: **update the value in Bitwarden first**, then run the matching task.
+- Secrets whose value comes from a third party (Cloudflare, GitHub, Authentik UI) still need the manual `rotate-*` flow: **update the value in Bitwarden first**, then run the matching task.
 
 ## 1. Tasks at a glance
 
@@ -48,7 +48,6 @@ These live entirely in Bitwarden. Recommended path: `task autorotate-bws ns=<ns>
 | Immich JWT secret | `immich/immich-secrets/JWT_SECRET` | `rotate-bws ns=immich name=immich-secrets deploy=immich-server` | Invalidates mobile/desktop app sessions — users have to re-login. |
 | Nextcloud secret key | `nextcloud/nextcloud-secrets/secret` | `rotate-bws ns=nextcloud name=nextcloud-secrets deploy=nextcloud` | Invalidates encrypted previews/cookies. |
 | Pankha JWT + session keys | `pankha/pankha-secrets/JWT_SECRET`, `.../SESSION_SECRET` | `rotate-bws ns=pankha name=pankha-secrets deploy=pankha-app` | Invalidates dashboard sessions. |
-| Alertmanager Telegram bot token | `monitoring/alertmanager-telegram/token` | `rotate-bws ns=monitoring name=alertmanager-telegram deploy=alertmanager-monitoring-kube-prometheus-alertmanager` | Generate new in @BotFather first; old keeps working until you `/revoke`. |
 | Grafana ↔ Authentik OAuth client secret | `monitoring/grafana-authentik-oauth/client-secret` | `rotate-bws ns=monitoring name=grafana-authentik-oauth deploy=monitoring-grafana` | Rotate in Authentik UI (Application → Provider → "Generate new") AND BW in lockstep. Brief SSO-login outage. |
 
 ### 2.2 Cloudflare tunnel tokens (`task rotate-tunnel svc=<name>`)
