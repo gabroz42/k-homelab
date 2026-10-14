@@ -25,6 +25,5 @@ data:
   CLUSTER_NAME: homelab
   BW_ORG_ID: c8536524-d9a3-48f5-a4cf-b41600bd0ee6
   BW_PROJECT_ID: eb7f19cd-99ea-4888-95f7-b41600be7baf
-  TELEGRAM_CHAT_ID: "714757023"
   LOCAL_DOMAIN: local.gabro.ovh
   LETSENCRYPT_EMAIL: gabriele.broccoli@gmail.com
