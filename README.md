@@ -52,7 +52,7 @@ Power & thermals:
 - **Networking & ingress** — [Traefik](https://traefik.io) handles ingress, [MetalLB](https://metallb.io) gives it a stable LAN IP, [AdGuard Home](https://adguard.com/adguard-home/overview.html) does local DNS and filtering, and [cloudflared](https://github.com/cloudflare/cloudflared) publishes the public services over Cloudflare Tunnels.
 - **Security & secrets** — [cert-manager](https://cert-manager.io) issues a wildcard certificate via Let's Encrypt DNS-01, [External Secrets](https://external-secrets.io) pulls every credential from [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) at runtime, and [Authentik](https://goauthentik.io) provides SSO and forward-auth. Namespaces enforce Pod Security Standards and each app carries a default-deny NetworkPolicy.
 - **Storage & data** — [Longhorn](https://longhorn.io) for block PVCs (installed by the bootstrap script, deliberately outside Flux), [MinIO](https://min.io) as an in-cluster S3 store behind Nextcloud, and [VolSync](https://github.com/backube/volsync) + [restic](https://restic.net) for backups against an append-only server.
-- **Observability** — [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts) for metrics and Alertmanager (routed to Telegram), [Loki](https://grafana.com/oss/loki/) + [Alloy](https://grafana.com/docs/alloy/latest/) for logs, and [Grafana](https://grafana.com) for dashboards.
+- **Observability** — [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts) for metrics and Alertmanager, [Loki](https://grafana.com/oss/loki/) + [Alloy](https://grafana.com/docs/alloy/latest/) for logs, and [Grafana](https://grafana.com) for dashboards.
 
 ### GitOps
 
