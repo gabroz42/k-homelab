@@ -114,4 +114,4 @@ spec:
       image:
         registry: docker.io
         repository: kiwigrid/k8s-sidecar
-        tag: "2.11.2"
+        tag: "2.14.1"
