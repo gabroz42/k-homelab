@@ -8,9 +8,6 @@ _My home Kubernetes cluster — fully self-hosted, GitOps-managed, and reconcile
 [![Flux](https://img.shields.io/badge/Flux-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
 [![Renovate](https://img.shields.io/badge/Renovate-1A1F6C?style=for-the-badge&logo=renovate&logoColor=white)](https://www.mend.io/renovate)
 
-[![CI](https://img.shields.io/gitlab/pipeline-status/server%2Fk-homelab?gitlab_url=https%3A%2F%2Fgitlab.gabro.ovh&branch=main&style=for-the-badge&logo=gitlab&logoColor=white&label=kubeconform%20%2B%20flate)](https://gitlab.gabro.ovh/server/k-homelab/-/pipelines?ref=main)
-[![Last Commit](https://img.shields.io/gitlab/last-commit/server%2Fk-homelab?gitlab_url=https%3A%2F%2Fgitlab.gabro.ovh&branch=main&style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.gabro.ovh/server/k-homelab/-/commits/main)
-
 </div>
 
 ---
