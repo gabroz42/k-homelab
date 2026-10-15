@@ -140,7 +140,7 @@ tasks:
       - |
         URL=$(awk '/^  url:/{print $2; exit}' clusters/homelab/flux-system/gotk-sync.yaml)
         kubectl -n flux-system patch gitrepository flux-system --type=json \
-          -p "[{\"op\":\"replace\",\"path\":\"/spec/url\",\"value\":\"$URL\"},{\"op\":\"remove\",\"path\":\"/spec/secretRef\"}]"
+          -p "[{\"op\":\"replace\",\"path\":\"/spec/url\",\"value\":\"$URL\"},{\"op\":\"replace\",\"path\":\"/spec/secretRef\",\"value\":{\"name\":\"flux-system-git\"}}]"
       - flux -n flux-system reconcile source git flux-system
       - flux -n flux-system resume kustomization flux-system
 
