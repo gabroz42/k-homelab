@@ -10,6 +10,8 @@ spec:
   ref:
     branch: main
   url: http://gitlab.gitlab.svc.cluster.local/server/k-homelab.git
+  secretRef:
+    name: flux-system-git
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
