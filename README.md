@@ -24,13 +24,15 @@ Everything running on the server is described in this repo. I edit a file, push 
 
 Almost all hardware used was recycled from previous upgrades, found lying around or gifted by friends. The only things I had to buy were the micro-ATX parts (mobo, case and PSU, the cheapest I could find).
 
-- **CPU**: AMD Ryzen 2600X
-- **RAM**: 32GB DDR4
-- **Main drive**: 1TB Sabrent NVMe
-- **Storage** NVMe: 500GB Samsung NVMe (photos)
-- **Storage** drive (films): 4TB HDD
-- **Storage** drive (backups): 2TB HDD
-- 600W **UPS**
+| Part              | What                       |
+| ----------------- | -------------------------- |
+| **CPU**           | AMD Ryzen 2600X            |
+| **RAM**           | 32GB DDR4                  |
+| **Main drive**    | 1TB Sabrent NVMe           |
+| **Storage NVMe**  | 500GB Samsung NVMe (photos)|
+| **Films drive**   | 4TB HDD                    |
+| **Backup drive**  | 2TB HDD                    |
+| **UPS**           | 600W                       |
 
 The system and the cloud storage services that need to be fast run on the NVMe drives. The UPS is monitored too, so I get an alert on a power cut or when the battery is getting tired, and the fans are controlled by Pankha based on the motherboard sensors.
 
@@ -38,17 +40,19 @@ The system and the cloud storage services that need to be fast run on the NVMe d
 
 This is how my home Kubernetes cluster is configured:
 
-- **k3s** is used as a lightweight Kubernetes distribution
-- **Flux** keeps the cluster in sync with this repo
-- **Renovate** opens merge requests when a new version of an app or chart comes out
-- **Traefik** is used as the ingress controller
-- **MetalLB** as load balancer
-- **Cloudflare** tunnels for remotely accessed services
-- **AdGuard Home** for DNS and ad blocking
-- **Authentik** as a single login for every app
-- **cert-manager** for the HTTPS certificates
-- **Longhorn** for the app storage
-- **Prometheus**, **Loki** and **Grafana** for metrics, logs and alerts
+| Software                                                       | Used for                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------ |
+| [k3s](https://k3s.io)                                          | Lightweight Kubernetes distribution                    |
+| [Flux](https://fluxcd.io)                                      | Keeps the cluster in sync with this repo               |
+| [Renovate](https://www.mend.io/renovate)                       | Opens merge requests when a new app or chart version comes out |
+| [Traefik](https://traefik.io)                                  | Ingress controller                                     |
+| [MetalLB](https://metallb.io)                                  | Load balancer                                          |
+| [Cloudflare Tunnels](https://github.com/cloudflare/cloudflared) | Remote access to the public services                  |
+| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | DNS and ad blocking                                    |
+| [Authentik](https://goauthentik.io)                            | Single login for every app                             |
+| [cert-manager](https://cert-manager.io)                        | HTTPS certificates                                     |
+| [Longhorn](https://longhorn.io)                                | App storage                                            |
+| [Prometheus](https://prometheus.io), [Loki](https://grafana.com/oss/loki/), [Grafana](https://grafana.com) | Metrics, logs and alerts |
 
 When I push to `main`, a webhook tells Flux right away and the change gets applied in three steps: first the shared settings, then the core services, then the apps. Values that change between setups (domain, timezone, IPs, disk paths) are written once in a single settings file instead of being repeated everywhere.
 
