@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏠 Gabro's Homelab
+# 🏠 K-Homelab
 
 _My home Kubernetes cluster — fully self-hosted and run straight from this repo._
 
