@@ -6,6 +6,8 @@ skinparam defaultFontName "Segoe UI"
 skinparam defaultFontSize 13
 skinparam shadowing false
 skinparam roundCorner 10
+skinparam nodesep 30
+skinparam ranksep 45
 
 skinparam rectangle {
   backgroundColor #f1f5f9
@@ -18,6 +20,11 @@ skinparam database {
   fontColor #1e293b
 }
 skinparam cloud {
+  backgroundColor #dbeafe
+  borderColor #3b82f6
+  fontColor #1e293b
+}
+skinparam actor {
   backgroundColor #dbeafe
   borderColor #3b82f6
   fontColor #1e293b
@@ -39,83 +46,103 @@ skinparam arrow {
 }
 
 cloud "  **Internet**  " as inet
-cloud "  **GitHub**  //config repo//  " as gh
+actor "**Home devices**" as lan
+cloud "  **Bitwarden**  //passwords//  " as bw
 
-node "  **Pi Node** · arm64  //Raspberry Pi 5 · 8 GB//  " as pinode {
-  rectangle "**Cloudflare Tunnels**" as cf
-  rectangle "**Homepage**" as hp
-}
+node "  **homelab**  //Ryzen 5 2600X · 32 GB//  " as host {
 
-node "  **Homelab Node** · x86  //AMD Ryzen 5 2600X · 16 GB DDR4//  " as x86 {
-
-  frame "Ingress" {
-    rectangle "**MetalLB**  ·  **Traefik**  ·  **AdGuard**" as netstack
+  frame "Way in" as entry {
+    rectangle "**Cloudflare Tunnel**" as cf
+    rectangle "**AdGuard**  //DNS//" as ag
+    rectangle "**Traefik**" as tr
+    rectangle "**Authentik**  //login//" as auth
   }
 
-  frame "Public   *.gabro.ovh" as pubframe {
+  frame "Public   *.gabro.ovh" as pub {
     rectangle "**Jellyfin**" as jf
-    rectangle "**Nextcloud**" as nc
     rectangle "**Immich**" as im
+    rectangle "**Nextcloud**" as nc
     rectangle "**Navidrome**" as nv
-    rectangle "**Authentik**" as auth
+    rectangle "**Matrix**" as mx
+    rectangle "**Dispatcharr**" as dp
     rectangle "**Grafana**" as graf
+    rectangle "**Centralino**" as cen
   }
 
-  frame "Local   *.local.gabro.ovh" as privframe {
-    rectangle "**Servarr**" as sarr
-    rectangle "**Prometheus**" as prom
+  frame "Home only   *.local.gabro.ovh" as home {
+    rectangle "***arr stack**" as sarr
+    rectangle "**Homepage**" as hp
     rectangle "**Headlamp**" as hl
-    rectangle "**pankha**" as pk
+    rectangle "**Pankha**" as pk
   }
 
-  frame "Data" {
+  frame "Behind the scenes" as ops {
+    rectangle "**GitLab** → **Flux**  //config//" as git
+    rectangle "**Prometheus · Loki**  //monitoring//" as mon
+    rectangle "**restic**  //weekly backups//" as bkp
+  }
+
+  frame "Data" as data {
     database "**PostgreSQL**" as pg
-    database "**Redis · Valkey**" as rd
-    database "**MinIO**" as s3
+    database "**Valkey · Redis**" as rd
+    database "**MinIO**  //S3//" as s3
   }
 
-  frame "Storage   Longhorn" {
-    database "**1TB NVMe** OS" as d1
-    database "**500GB NVMe**" as d2
-    database "**4TB HDD** Media" as d3
-    database "**2TB HDD** Backups" as d4
+  frame "Disks" as disks {
+    database "**1 TB NVMe**  //apps//" as d1
+    database "**500 GB NVMe**  //photos//" as d2
+    database "**Media disks**  //films · TV · music//" as d3
+    database "**2 TB HDD**  //backups//" as d4
   }
-
-  rectangle "**Backups**  //restic · VolSync//" as bkp
 }
 
-' ─── Ordering ───
-inet -[hidden]right-> gh
-cf -[hidden]down-> hp
-netstack -[hidden]down-> pubframe
-nc -[hidden]down-> sarr
-sarr -[hidden]down-> pg
-pg -[hidden]down-> d1
-pinode -[hidden]down-> x86
+inet -[hidden]right-> lan
+lan -[hidden]right-> bw
+cf -[hidden]right-> ag
+auth -[hidden]right-> tr
 
-' ─── Connections ───
+jf -[hidden]right-> im
+im -[hidden]right-> nc
+nc -[hidden]right-> nv
+mx -[hidden]right-> dp
+dp -[hidden]right-> graf
+graf -[hidden]right-> cen
+jf -[hidden]down-> mx
+
+sarr -[hidden]right-> hp
+hl -[hidden]right-> pk
+sarr -[hidden]down-> hl
+
+pg -[hidden]right-> rd
+rd -[hidden]right-> s3
+git -[hidden]right-> mon
+mon -[hidden]right-> bkp
+
+d3 -[hidden]right-> d2
+d2 -[hidden]right-> d1
+d1 -[hidden]right-> d4
+
+pub -[hidden]right-> home
+mx -[hidden]down-> pg
+pk -[hidden]down-> git
+pg -[hidden]down-> d3
+
 inet -[#dc2626,bold]down-> cf : " HTTPS"
-gh -[#5468FF,bold]down-> x86 : " Flux reconcile"
-cf -[#0891b2]down-> netstack
-netstack -[#0891b2]down-> pubframe
-netstack -[#0891b2]down-> privframe
+cf -[#dc2626]down-> tr
+tr -[#dc2626]left-> auth
+auth -[#dc2626]down-> pub : " logged in"
 
-sarr .[#dc2626].> jf : " media"
-sarr .[#dc2626].> nv : " music"
-graf -[#ea580c]-> prom
+lan -[#0891b2,bold]down-> ag : " DNS"
+ag .[#0891b2].> tr
+tr -[#0891b2]down-> home
 
-nc -[#3b82f6]down-> pg
-nc -[#3b82f6]down-> rd
-nc -[#3b82f6]down-> s3
-im -[#3b82f6]down-> pg
+bw -[#7c3aed]down-> host : " secrets"
+
+pub -[#3b82f6]down-> data
+data -[#3b82f6]down-> d1
 im -[#3b82f6]down-> d2
-auth -[#3b82f6]down-> pg
-pk -[#3b82f6]down-> pg
-
 jf -[#3b82f6]down-> d3
 sarr -[#3b82f6]down-> d3
-bkp -[#64748b]-> d4
-bkp .[#64748b].> pg : " db dump"
-bkp .[#64748b].> s3 : " VolSync"
+bkp -[#64748b]down-> d4
 
 @enduml
