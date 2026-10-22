@@ -20,7 +20,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: gitlab
-          image: gitlab/gitlab-ce:19.4.2-ce.0
+          image: gitlab/gitlab-ce:19.5.1-ce.0
           ports:
             - name: http
               containerPort: 80
