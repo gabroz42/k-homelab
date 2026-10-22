@@ -176,7 +176,7 @@ spec:
         kubernetes.io/hostname: ${PRIMARY_NODE}
       containers:
         - name: pankha-app
-          image: anexgohan/pankha:v0.6.5
+          image: anexgohan/pankha:v0.6.6
           ports:
             - containerPort: 3143
               name: http
