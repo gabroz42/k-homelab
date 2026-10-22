@@ -115,24 +115,28 @@ flowchart LR
 
 Here are the services that are exposed to the internet:
 
-- **Jellyfin** for streaming films and TV
-- **Dispatcharr** for live TV
-- **Nextcloud** as a general purpose cloud storage for files
-- **Immich** as a personal Google Photos substitute
-- **Navidrome** for music streaming
-- **Matrix** for chat
-- **Grafana** for monitoring
-- **GitLab** for hosting this repo and running the CI
-- **Authentik** as a centralized authentication provider
-- **Centralino**, a home automation panel for the ESP32 boards
+| Service                                                   | Used for                                        |
+| --------------------------------------------------------- | ----------------------------------------------- |
+| [Jellyfin](https://jellyfin.org)                          | Streaming films and TV                          |
+| [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV                                         |
+| [Nextcloud](https://nextcloud.com)                        | General purpose cloud storage for files         |
+| [Immich](https://immich.app)                              | Personal Google Photos substitute               |
+| [Navidrome](https://navidrome.org)                        | Music streaming                                 |
+| [Matrix](https://matrix.org)                              | Chat                                            |
+| [Grafana](https://grafana.com)                            | Monitoring                                      |
+| [GitLab](https://about.gitlab.com)                        | Hosting this repo and running the CI            |
+| [Authentik](https://goauthentik.io)                       | Centralized authentication provider             |
+| Centralino                                                | Home automation panel for the ESP32 boards      |
 
 ### Private services
 
-- **Arr stack** for feeding Jellyfin and Navidrome
-- **AdGuard Home** as a network filter and for DNS rewrites in the local network
-- **Headlamp** as a Kubernetes dashboard
-- **Pankha** for fan and temperature control
-- **Homepage** as a start page with every service
+| Service                                                        | Used for                                                 |
+| -------------------------------------------------------------- | -------------------------------------------------------- |
+| Arr stack                                                      | Feeding Jellyfin and Navidrome                           |
+| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Network filter and DNS rewrites in the local network     |
+| [Headlamp](https://headlamp.dev)                               | Kubernetes dashboard                                     |
+| Pankha                                                         | Fan and temperature control                              |
+| [Homepage](https://gethomepage.dev)                            | Start page with every service                            |
 
 The server itself is only reachable over VPN.
 
