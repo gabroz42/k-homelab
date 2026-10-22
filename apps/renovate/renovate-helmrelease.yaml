@@ -25,7 +25,7 @@ spec:
     cleanupOnFail: true
   values:
     cronjob:
-      schedule: "*/15 * * * *"
+      schedule: "0 * * * *"
       timeZone: ${TIMEZONE}
       concurrencyPolicy: Forbid
       successfulJobsHistoryLimit: 1
@@ -43,8 +43,17 @@ spec:
           "repositories": ["server/k-homelab"],
           "onboarding": false,
           "requireConfig": "required",
-          "gitAuthor": "Renovate Bot <renovate-bot@${PUBLIC_DOMAIN}>"
+          "gitAuthor": "Renovate Bot <renovate-bot@${PUBLIC_DOMAIN}>",
+          "cachePrivatePackages": true,
+          "cacheTtlOverride": {
+            "datasource-docker-tags": 360,
+            "datasource-releases-docker": 360
+          }
         }
+      persistence:
+        cache:
+          enabled: true
+          storageSize: 1Gi
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
