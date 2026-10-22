@@ -1,0 +1,68 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - apps/**
+      - infrastructure/**
+      - clusters/**
+      - .github/workflows/ci.yaml
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  kubeconform:
+    name: kubeconform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v5
+
+      - name: Install kubeconform
+        run: |
+          version=v0.6.7
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${version}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /tmp kubeconform
+          sudo install /tmp/kubeconform /usr/local/bin/kubeconform
+          kubeconform -v
+
+      - name: Validate
+        run: |
+          set -euo pipefail
+          fail=0
+          for d in clusters/homelab infrastructure/configs infrastructure/controllers apps/*/; do
+            d="${d%/}"
+            [[ -f "$d/kustomization.yaml" ]] || continue
+            echo "::group::$d"
+            if ! kubectl kustomize "$d" | kubeconform -strict -ignore-missing-schemas -summary \
+                -schema-location default \
+                -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'; then
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail
+
+  flate:
+    name: flate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: home-operations/flate/action@main
+        with:
+          base: ""
+
+      - name: Validate Kustomizations and HelmReleases
+        run: flate test all --path .
