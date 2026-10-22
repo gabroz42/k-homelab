@@ -28,7 +28,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: nextcloud-cron
-              image: nextcloud:35.0.1-apache
+              image: nextcloud:35.0.2-apache
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
