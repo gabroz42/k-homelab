@@ -2,7 +2,7 @@
 
 # 🏠 Gabro's Homelab
 
-_My home Kubernetes cluster — fully self-hosted, GitOps-managed, and reconciled straight from this repo._
+_My home Kubernetes cluster — fully self-hosted and run straight from this repo._
 
 [![k3s](https://img.shields.io/badge/k3s-FFC61C?style=for-the-badge&logo=k3s&logoColor=black)](https://k3s.io)
 [![Flux](https://img.shields.io/badge/Flux-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
@@ -17,67 +17,59 @@ _My home Kubernetes cluster — fully self-hosted, GitOps-managed, and reconcile
 
 ## Overview
 
-This is the single source of truth for my home Kubernetes cluster. Every workload, controller and config lives here and is applied through GitOps — there is no manual `kubectl apply`, the `main` branch _is_ the desired state of the cluster. Most of the hardware was recycled from old upgrades or gifted by friends, plus some cheap micro-ATX bits.
+This repo describes everything running on my home server. I change a file, push it, and the cluster updates itself to match. Nothing is set up by hand.
 
-It started as a way to learn Kubernetes and grew into the thing that handles my photos, media and files. Along the way I tried to hold it to the standards I'd want at work: declarative config, no secrets in Git, automated dependency and node upgrades, append-only backups and a good amount of observability.
+It started as a way to learn Kubernetes and grew into the thing that holds my photos, media and files. I try to run it the way I'd want things run at work: everything written down as config, no passwords in Git, automatic updates, backups that can't be tampered with, and alerts when something breaks.
 
-The cluster is self-hosted. The only door to the outside world is a set of Cloudflare Tunnels — there are no ports forwarded on my router.
+Nothing is exposed directly to the internet. Public services go out through Cloudflare Tunnels, so there are no open ports on my router.
+
+Most of the hardware is recycled from old upgrades or gifted by friends.
 
 ## Hardware
 
-Single node, runs every workload and carries all persistent disks
+One machine does everything:
 
-| Node      | Arch   | Role                                | Notes                |
-| --------- | ------ | ----------------------------------- | -------------------- |
-| `homelab` | x86_64 | control-plane + storage + workloads | Ryzen 2600x 32GB ram |
+| Node      | CPU          | RAM   | Role                     |
+| --------- | ------------ | ----- | ------------------------ |
+| `homelab` | Ryzen 2600X  | 32 GB | Runs every app and disk  |
 
-All storage is attached to `homelab`:
+- **Two NVMe drives** (1 TB + 500 GB) for app data
+- **A 2 TB hard drive** just for backups
+- **Separate disks** for films, TV and music
+- **A UPS** keeps it running through power cuts and sends me an alert if the battery gets low
+- **Fan control** follows the motherboard's temperature sensors, with an emergency ramp-up if something overheats
 
-- **[Longhorn](https://longhorn.io)** manages two NVMe drives (1 TB + 500 GB)
-- A separate **2 TB HDD** holds the append-only restic repository for backups, kept off the Longhorn pool
-- Media and music sit on their own host-path disks, mounted straight into the pods
+## How it works
 
-Power & thermals:
+The cluster runs [k3s](https://k3s.io), a lightweight Kubernetes. The main building blocks:
 
-- The box runs behind a **UPS**, exposed on the LAN through [NUT](https://networkupstools.org); `nut-exporter` scrapes battery charge, runtime, load and line voltage into Prometheus so i get alerts on a power event or a tired battery.
-- Fan curves are driven by **Pankha**, reading the motherboard's sensors with an emergency ramp if a reading goes out of control.
+- **Updates** — [Flux](https://fluxcd.io) keeps the cluster in sync with this repo. [Renovate](https://www.mend.io/renovate) suggests app updates, and k3s upgrades itself in a weeknight window.
+- **Networking** — [Traefik](https://traefik.io) routes web traffic to the right app, [AdGuard Home](https://adguard.com/adguard-home/overview.html) handles DNS and blocks ads, and [Cloudflare Tunnels](https://github.com/cloudflare/cloudflared) publish the public services.
+- **Security** — [Authentik](https://goauthentik.io) gives me a single login for every app, [cert-manager](https://cert-manager.io) handles HTTPS certificates, and every app is walled off so it can only talk to what it needs.
+- **Storage** — [Longhorn](https://longhorn.io) manages the app disks and [MinIO](https://min.io) stores Nextcloud's files.
+- **Monitoring** — [Prometheus](https://prometheus.io), [Loki](https://grafana.com/oss/loki/) and [Grafana](https://grafana.com) collect metrics and logs and turn them into dashboards and alerts.
 
-## Cluster
+### From Git to cluster
 
-[k3s](https://k3s.io) on a single x86 node that is control-plane, storage and worker in one. Lightweight, no-state pods (like the tunnels) still carry node affinity for `${STATELESS_NODE}` and a toleration for a `workload=stateless` taint, so pointing that setting at a new, tainted node moves them off the main box without touching any manifest (leftover from previous 2 node setup).
-
-### Core components
-
-- **GitOps & automation** — [Flux](https://fluxcd.io) reconciles the cluster from this repo, [Renovate](https://www.mend.io/renovate) raises PRs for chart and image updates, and [system-upgrade-controller](https://github.com/rancher/system-upgrade-controller) upgrades k3s itself inside a weeknight maintenance window. A `Taskfile` covers the day-to-day commands, and a bootstrap script rebuilds the whole cluster on a fresh machine.
-- **Networking & ingress** — [Traefik](https://traefik.io) handles ingress, [MetalLB](https://metallb.io) gives it a stable LAN IP, [AdGuard Home](https://adguard.com/adguard-home/overview.html) does local DNS and filtering, and [cloudflared](https://github.com/cloudflare/cloudflared) publishes the public services over Cloudflare Tunnels.
-- **Security & secrets** — [cert-manager](https://cert-manager.io) issues a wildcard certificate via Let's Encrypt DNS-01, [External Secrets](https://external-secrets.io) pulls every credential from [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) at runtime, and [Authentik](https://goauthentik.io) provides SSO and forward-auth. Namespaces enforce Pod Security Standards and each app carries a default-deny NetworkPolicy.
-- **Storage & data** — [Longhorn](https://longhorn.io) for block PVCs (installed by the bootstrap script, deliberately outside Flux), [MinIO](https://min.io) as an in-cluster S3 store behind Nextcloud, and [VolSync](https://github.com/backube/volsync) + [restic](https://restic.net) for backups against an append-only server.
-- **Observability** — [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts) for metrics and Alertmanager, [Loki](https://grafana.com/oss/loki/) + [Alloy](https://grafana.com/docs/alloy/latest/) for logs, and [Grafana](https://grafana.com) for dashboards.
-
-### GitOps
-
-[Flux](https://fluxcd.io) watches this repo and applies changes the moment they land on `main`. The entrypoint is `clusters/homelab`, which wires up the root Kustomizations in dependency order. Cluster-wide values — domains, timezone, IP ranges, host paths — live once in a `cluster-settings` ConfigMap and get substituted everywhere through `postBuild.substituteFrom`. A GitHub webhook hits the in-cluster `flux-webhook` receiver so reconciliation is near-instant instead of waiting on the poll interval.
+When I push to `main`, a webhook tells Flux right away, and Flux applies the change in three steps: shared settings first, then the core services, then the apps. Values that change per setup (domain, timezone, IP addresses, disk paths) live in one settings file instead of being repeated everywhere.
 
 ```mermaid
 graph TD
-    A[GitRepository: flux-system] -->|reconciles| B[Kustomization: infrastructure-configs]
-    B -->|namespaces · netpols| C[Kustomization: infrastructure-controllers]
-    C -->|cert-manager · ESO · MetalLB · VolSync · VPA · Kyverno| D[Kustomization: apps]
-    D -->|per-app ks.yaml| E[HelmReleases / Deployments]
+    A[This repo] --> B[Shared settings<br/>namespaces · network rules]
+    B --> C[Core services<br/>certificates · secrets · storage · backups]
+    C --> D[Apps]
 ```
 
-### Layout
+### Repo layout
 
 ```
-clusters/homelab     # Flux entrypoint — bootstrap + root Kustomizations + cluster-settings
-infrastructure
-├── configs          # namespaces, network policies
-└── controllers      # cert-manager, external-secrets, metallb, volsync, vpa, kyverno, system-upgrade, ...
-apps                 # one folder per workload (ks.yaml + manifests or HelmRelease)
-bootstrap            # from-zero install script, site.env template, pinned Longhorn
-docs                 # operator handbook (INSTRUCTIONS.md) and runbooks
-scripts              # Bitwarden rotation and settings validation helpers
-schema               # cluster diagrams (PlantUML source + rendered PNGs)
+clusters/homelab     # where Flux starts, plus the shared settings
+infrastructure       # core services the apps depend on
+apps                 # one folder per app
+bootstrap            # script to rebuild the cluster on a new machine
+docs                 # detailed handbook and runbooks
+scripts              # helper scripts
+schema               # architecture diagrams
 ```
 
 <details>
@@ -95,93 +87,87 @@ schema               # cluster diagrams (PlantUML source + rendered PNGs)
 
 ## Services
 
-### Public — via Cloudflare Tunnel
+### Public
 
-Each public service runs its own `cloudflared` deployment (named tunnel, token from Bitwarden), two replicas behind a PodDisruptionBudget with a `/ready` check on the edge connection so a disconnected tunnel actually fails its probe. Several sit behind Authentik forward-auth.
+Reachable from anywhere through Cloudflare. Most ask you to log in through Authentik first.
 
-| Service                                                   | Purpose                                          |
-| --------------------------------------------------------- | ------------------------------------------------ |
-| [Jellyfin](https://jellyfin.org)                          | Film & TV streaming                              |
-| [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV / IPTV streams                           |
-| [Nextcloud](https://nextcloud.com)                        | General-purpose cloud storage (MinIO S3 backend) |
-| [Immich](https://immich.app)                              | Self-hosted photo backup                         |
-| [Navidrome](https://navidrome.org)                        | Music streaming                                  |
-| [Matrix](https://matrix.org)                              | Chat — Synapse, Element Web and MAS for login    |
-| [Authentik](https://goauthentik.io)                       | Centralized SSO / identity provider              |
-| [Grafana](https://grafana.com)                            | Monitoring & dashboards                          |
-| Centralino                                                | Home-automation panel for the ESP32 boards       |
+| Service                                                   | What it's for                                 |
+| --------------------------------------------------------- | --------------------------------------------- |
+| [Jellyfin](https://jellyfin.org)                          | Films & TV                                    |
+| [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV                                       |
+| [Nextcloud](https://nextcloud.com)                        | Files & cloud storage                         |
+| [Immich](https://immich.app)                              | Photo backup                                  |
+| [Navidrome](https://navidrome.org)                        | Music                                         |
+| [Matrix](https://matrix.org)                              | Chat                                          |
+| [Authentik](https://goauthentik.io)                       | Single login for everything                   |
+| [Grafana](https://grafana.com)                            | Monitoring dashboards                         |
+| Centralino                                                | Home-automation panel                         |
 
-### Local — via Traefik
+### Home network only
 
-Served on the LAN at `*.local.gabro.ovh`; AdGuard rewrites those hostnames to Traefik's MetalLB IP and Traefik presents the wildcard cert.
+Reachable at `*.local.gabro.ovh` from inside my network.
 
-| Service                                                        | Purpose                                                                   |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| \*arr stack                                                    | Prowlarr, Radarr, Sonarr, Lidarr, qBittorrent, Seerr, tvheadend           |
-| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Network filtering + local DNS (admin UI also public, behind forward-auth) |
-| [Headlamp](https://headlamp.dev)                               | Kubernetes UI                                                             |
-| Pankha                                                         | Fan / thermal control dashboard                                           |
-| Homepage                                                       | Service dashboard (also public, behind forward-auth)                      |
+| Service                                                        | What it's for                                       |
+| -------------------------------------------------------------- | --------------------------------------------------- |
+| \*arr stack                                                    | Finding and organising films, TV and music          |
+| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | DNS and ad blocking                                 |
+| [Headlamp](https://headlamp.dev)                               | Kubernetes dashboard                                |
+| Pankha                                                         | Fan & temperature control                           |
+| Homepage                                                       | Start page linking every service                    |
 
-The nodes themselves are reachable only over VPN + SSH.
+The server itself is only reachable over VPN.
 
 ## Network
 
-Both ingress paths land on the same Traefik instance — what differs is the hostname. Public hosts (`*.gabro.ovh`) arrive **only** through a Cloudflare Tunnel, with no inbound ports open on the router, and Traefik gates them with Authentik forward-auth. Local hosts (`*.local.gabro.ovh`) resolve through AdGuard's DNS rewrites straight to Traefik's MetalLB IP, never touching the public internet or the auth hop.
+All traffic ends up at Traefik. Visitors from the internet come in through a Cloudflare Tunnel and have to log in before reaching an app. Devices at home skip all that: AdGuard points `*.local.gabro.ovh` straight at the server.
 
 ```mermaid
 flowchart LR
-    subgraph cluster ["k3s cluster"]
+    subgraph cluster ["Home server"]
         direction LR
-        CFD["cloudflared"] --> TR["Traefik"]
-        LB(["MetalLB IP"]) --> TR
-        TR -- "public host" --> AK{"Authentik<br/>forward-auth"}
-        AK -- "authenticated" --> APP["App pod"]
-        TR -- "local host" --> APP
+        CFD["Cloudflare Tunnel"] --> TR["Traefik"]
+        TR -- "from internet" --> AK{"Login<br/>(Authentik)"}
+        AK --> APP["App"]
+        TR -- "from home" --> APP
     end
 
-    PU(["Public user"]) --> CFE["Cloudflare edge"]
-    CFE -. "QUIC tunnel" .-> CFD
-    LU(["Local device"]) -- "*.local.gabro.ovh" --> AG["AdGuard Home"]
-    AG -. "DNS rewrite" .-> LB
+    PU(["Internet user"]) --> CFE["Cloudflare"]
+    CFE -.-> CFD
+    LU(["Home device"]) --> AG["AdGuard DNS"]
+    AG -.-> TR
 ```
 
-## Storage & backups
+## Backups
 
-[Longhorn](https://longhorn.io) is the default `StorageClass`; a second `longhorn-single` class (one replica) is used where in-cluster replication buys nothing on a single storage node. [MinIO](https://min.io) runs standalone as the S3 backend for Nextcloud, with bucket versioning on.
-
-Backups are [VolSync](https://github.com/backube/volsync) `ReplicationSource`s using [restic](https://restic.net), plus scheduled `pg_dump` jobs for the databases. They target an in-cluster `restic-rest-server` running in **`--append-only`** mode, so a compromised client can add snapshots but never delete or overwrite existing ones. Retention is 7 daily / 4 weekly / 12 monthly with a weekly prune, and a `restic-exporter` feeds Prometheus — I get alerted on stale repos, failed integrity checks, and jobs that "succeed" without actually writing data.
+Every week, app data and databases are copied with [restic](https://restic.net) to the backup drive. The backup server only accepts new backups and never lets anyone delete or overwrite old ones, so a hacked app can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies, and I get an alert if a backup fails or goes stale.
 
 ## Secrets
 
-Nothing secret is committed. The repo references only **keys**; [External Secrets](https://external-secrets.io) resolves them from [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) at runtime, and [Reloader](https://github.com/stakater/Reloader) rolls workloads when a value changes. Rotation is scripted end-to-end in the `Taskfile`:
+No passwords or tokens are stored in this repo. They live in [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) and are pulled into the cluster when needed. When one changes, the apps using it restart automatically. Rotating a password is a single command:
 
 ```sh
-task autorotate-postgres app=nextcloud   # generate → write BW → ALTER USER → roll consumers
-task rotate-tunnel       svc=jellyfin    # rotate a Cloudflare tunnel token
-task autorotate-minio-nc-user            # rotate the shared MinIO / Nextcloud S3 user
-task rotate-cloudflare-api               # rotate the cert-manager Cloudflare API token
+task autorotate-postgres app=nextcloud   # new database password, everywhere
+task rotate-tunnel svc=jellyfin          # new Cloudflare tunnel token
 ```
 
-## Bootstrap
+## Rebuilding from scratch
 
-The cluster can be rebuilt from zero on a fresh Ubuntu machine with one script. It reproduces the stack, not the data — restoring from restic is a separate step.
+If the server dies, a single script sets the whole cluster up again on a fresh Ubuntu machine:
 
 ```sh
-cp bootstrap/site.env.example bootstrap/site.env   # domains, IPs, disks, tokens (gitignored)
-task render-settings                               # write cluster-settings.yaml, then commit + push it
-task bootstrap                                     # sudo bootstrap/bootstrap.sh on the new machine
+cp bootstrap/site.env.example bootstrap/site.env   # fill in your domain, IPs and tokens
+task render-settings                               # turn it into the settings file, then push
+task bootstrap                                     # run on the new machine
 ```
 
-In order, the script prepares the host (packages, multipathd, mounts, hostPath dirs), installs a pinned k3s, seeds `cluster-settings` and the Bitwarden token, installs a pinned [Longhorn](https://longhorn.io) with its disk tags, then runs `flux bootstrap` and waits until the whole tree is Ready. It is idempotent, so a failed run can simply be re-run, and it refuses to touch a host that already runs workloads. Longhorn stays out of Flux on purpose: its chart ships the CRDs without a keep policy, so a pruned HelmRelease would delete every volume record with it. The external accounts (GitHub, Bitwarden, Cloudflare) and the post-install steps are covered in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md).
+It brings back the apps and config. The data comes back separately, from the backups. The full walkthrough is in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md).
 
-## Operations
+## Day to day
 
 ```sh
-task status    # overview of every Flux Kustomization, HelmRelease and source
-task bad       # show everything that is NOT Ready / Running
-task reconcile # pull latest from Git and reconcile all root Kustomizations
-task tree name=nextcloud   # list every resource a Kustomization manages
+task status      # what's running
+task bad         # anything broken
+task reconcile   # sync with Git right now
 ```
 
-Every push to `main` and every merge request is validated in GitLab CI (`.gitlab-ci.yml`) by [kubeconform](https://github.com/yannh/kubeconform) (schema validation) and [flate](https://github.com/home-operations/flate) (offline build and diff of the Flux tree).
+Every change is checked automatically before it's merged, using [kubeconform](https://github.com/yannh/kubeconform) and [flate](https://github.com/home-operations/flate).
