@@ -122,6 +122,7 @@ Here are the services that are exposed to the internet:
 - **Navidrome** for music streaming
 - **Matrix** for chat
 - **Grafana** for monitoring
+- **GitLab** for hosting this repo and running the CI
 - **Authentik** as a centralized authentication provider
 - **Centralino**, a home automation panel for the ESP32 boards
 
