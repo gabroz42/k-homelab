@@ -67,6 +67,7 @@ node "  **homelab**  //Ryzen 5 2600X · 32 GB//  " as host {
     rectangle "**Dispatcharr**" as dp
     rectangle "**Grafana**" as graf
     rectangle "**Centralino**" as cen
+    rectangle "**GitLab**" as gl
   }
 
   frame "Home only   *.local.gabro.ovh" as home {
@@ -77,7 +78,7 @@ node "  **homelab**  //Ryzen 5 2600X · 32 GB//  " as host {
   }
 
   frame "Behind the scenes" as ops {
-    rectangle "**GitLab** → **Flux**  //config//" as git
+    rectangle "**Flux**  //config from GitLab//" as git
     rectangle "**Prometheus · Loki**  //monitoring//" as mon
     rectangle "**restic**  //weekly backups//" as bkp
   }
@@ -107,6 +108,7 @@ nc -[hidden]right-> nv
 mx -[hidden]right-> dp
 dp -[hidden]right-> graf
 graf -[hidden]right-> cen
+nv -[hidden]right-> gl
 jf -[hidden]down-> mx
 
 sarr -[hidden]right-> hp
