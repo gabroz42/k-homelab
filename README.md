@@ -2,7 +2,7 @@
 
 # 🏠 K-Homelab
 
-_My home Kubernetes cluster — fully self-hosted and run straight from this repo._
+_My home Kubernetes cluster, fully self-hosted and run straight from this repo._
 
 [![k3s](https://img.shields.io/badge/k3s-FFC61C?style=for-the-badge&logo=k3s&logoColor=black)](https://k3s.io)
 [![Flux](https://img.shields.io/badge/Flux-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
@@ -15,43 +15,42 @@ _My home Kubernetes cluster — fully self-hosted and run straight from this rep
 
 ---
 
-## Overview
+Welcome to my homelab repo,
+here is a full presentation of my own Kubernetes cluster.
 
-This repo describes everything running on my home server. I change a file, push it, and the cluster updates itself to match. Nothing is set up by hand.
+Everything running on the server is described in this repo. I edit a file, push it, and the cluster updates itself to match, so nothing is configured by hand.
 
-It started as a way to learn Kubernetes and grew into the thing that holds my photos, media and files. I try to run it the way I'd want things run at work: everything written down as config, no passwords in Git, automatic updates, backups that can't be tampered with, and alerts when something breaks.
+## The hardware
 
-Nothing is exposed directly to the internet. Public services go out through Cloudflare Tunnels, so there are no open ports on my router.
+Almost all hardware used was recycled from previous upgrades, found lying around or gifted by friends. The only things I had to buy were the micro-ATX parts (mobo, case and PSU, the cheapest I could find).
 
-Most of the hardware is recycled from old upgrades or gifted by friends.
+- **CPU**: AMD Ryzen 2600X
+- **RAM**: 32GB DDR4
+- **Main drive**: 1TB Sabrent NVMe
+- **Storage** NVMe: 500GB Samsung NVMe (photos)
+- **Storage** drive (films): 4TB HDD
+- **Storage** drive (backups): 2TB HDD
+- 600W **UPS**
 
-## Hardware
+The system and the cloud storage services that need to be fast run on the NVMe drives. The UPS is monitored too, so I get an alert on a power cut or when the battery is getting tired, and the fans are controlled by Pankha based on the motherboard sensors.
 
-One machine does everything:
+## The software
 
-| Node      | CPU          | RAM   | Role                     |
-| --------- | ------------ | ----- | ------------------------ |
-| `homelab` | Ryzen 2600X  | 32 GB | Runs every app and disk  |
+This is how my home Kubernetes cluster is configured:
 
-- **Two NVMe drives** (1 TB + 500 GB) for app data
-- **A 2 TB hard drive** just for backups
-- **Separate disks** for films, TV and music
-- **A UPS** keeps it running through power cuts and sends me an alert if the battery gets low
-- **Fan control** follows the motherboard's temperature sensors, with an emergency ramp-up if something overheats
+- **k3s** is used as a lightweight Kubernetes distribution
+- **Flux** keeps the cluster in sync with this repo
+- **Renovate** opens merge requests when a new version of an app or chart comes out
+- **Traefik** is used as the ingress controller
+- **MetalLB** as load balancer
+- **Cloudflare** tunnels for remotely accessed services
+- **AdGuard Home** for DNS and ad blocking
+- **Authentik** as a single login for every app
+- **cert-manager** for the HTTPS certificates
+- **Longhorn** for the app storage
+- **Prometheus**, **Loki** and **Grafana** for metrics, logs and alerts
 
-## How it works
-
-The cluster runs [k3s](https://k3s.io), a lightweight Kubernetes. The main building blocks:
-
-- **Updates** — [Flux](https://fluxcd.io) keeps the cluster in sync with this repo. [Renovate](https://www.mend.io/renovate) suggests app updates, and k3s upgrades itself in a weeknight window.
-- **Networking** — [Traefik](https://traefik.io) routes web traffic to the right app, [AdGuard Home](https://adguard.com/adguard-home/overview.html) handles DNS and blocks ads, and [Cloudflare Tunnels](https://github.com/cloudflare/cloudflared) publish the public services.
-- **Security** — [Authentik](https://goauthentik.io) gives me a single login for every app, [cert-manager](https://cert-manager.io) handles HTTPS certificates, and every app is walled off so it can only talk to what it needs.
-- **Storage** — [Longhorn](https://longhorn.io) manages the app disks and [MinIO](https://min.io) stores Nextcloud's files.
-- **Monitoring** — [Prometheus](https://prometheus.io), [Loki](https://grafana.com/oss/loki/) and [Grafana](https://grafana.com) collect metrics and logs and turn them into dashboards and alerts.
-
-### From Git to cluster
-
-When I push to `main`, a webhook tells Flux right away, and Flux applies the change in three steps: shared settings first, then the core services, then the apps. Values that change per setup (domain, timezone, IP addresses, disk paths) live in one settings file instead of being repeated everywhere.
+When I push to `main`, a webhook tells Flux right away and the change gets applied in three steps: first the shared settings, then the core services, then the apps. Values that change between setups (domain, timezone, IPs, disk paths) are written once in a single settings file instead of being repeated everywhere.
 
 ```mermaid
 graph TD
@@ -85,41 +84,12 @@ schema               # architecture diagrams
 
 </details>
 
-## Services
+## Networking
 
-### Public
+First, a pool of IP addresses is reserved for MetalLB and Traefik is given an IP.
+Then, a DNS rewrite is configured in AdGuard Home so browsers in my network can reach every local service at `*.local.gabro.ovh` by asking Traefik for it via hostname. For publicly exposed services Traefik is set as the target of the Cloudflare tunnels.
 
-Reachable from anywhere through Cloudflare. Every app signs you in through Authentik.
-
-| Service                                                   | What it's for                                 |
-| --------------------------------------------------------- | --------------------------------------------- |
-| [Jellyfin](https://jellyfin.org)                          | Films & TV                                    |
-| [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV                                       |
-| [Nextcloud](https://nextcloud.com)                        | Files & cloud storage                         |
-| [Immich](https://immich.app)                              | Photo backup                                  |
-| [Navidrome](https://navidrome.org)                        | Music                                         |
-| [Matrix](https://matrix.org)                              | Chat                                          |
-| [Authentik](https://goauthentik.io)                       | Single login for everything                   |
-| [Grafana](https://grafana.com)                            | Monitoring dashboards                         |
-| Centralino                                                | Home-automation panel                         |
-
-### Home network only
-
-Reachable at `*.local.gabro.ovh` from inside my network.
-
-| Service                                                        | What it's for                                       |
-| -------------------------------------------------------------- | --------------------------------------------------- |
-| \*arr stack                                                    | Finding and organising films, TV and music          |
-| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | DNS and ad blocking                                 |
-| [Headlamp](https://headlamp.dev)                               | Kubernetes dashboard                                |
-| Pankha                                                         | Fan & temperature control                           |
-| Homepage                                                       | Start page linking every service                    |
-
-The server itself is only reachable over VPN.
-
-## Network
-
-All traffic ends up at Traefik. Visitors from the internet come in through a Cloudflare Tunnel and have to log in before reaching an app. Devices at home skip all that: AdGuard points `*.local.gabro.ovh` straight at the server.
+All services exposed to the outside world do so via a Cloudflare tunnel pod, so no ports are open on my router. Each tunnel runs two pods, so if one goes down the service stays up. Public services also go through Authentik, so you have to log in before reaching any app.
 
 ```mermaid
 flowchart LR
@@ -137,13 +107,41 @@ flowchart LR
     AG -.-> TR
 ```
 
-## Backups
+### Public services
 
-Every week, app data and databases are copied with [restic](https://restic.net) to the backup drive. The backup server only accepts new backups and never lets anyone delete or overwrite old ones, so a hacked app can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies, and I get an alert if a backup fails or goes stale.
+Here are the services that are exposed to the internet:
+
+- **Jellyfin** for streaming films and TV
+- **Dispatcharr** for live TV
+- **Nextcloud** as a general purpose cloud storage for files
+- **Immich** as a personal Google Photos substitute
+- **Navidrome** for music streaming
+- **Matrix** for chat
+- **Grafana** for monitoring
+- **Authentik** as a centralized authentication provider
+- **Centralino**, a home automation panel for the ESP32 boards
+
+### Private services
+
+- **Arr stack** for feeding Jellyfin and Navidrome
+- **AdGuard Home** as a network filter and for DNS rewrites in the local network
+- **Headlamp** as a Kubernetes dashboard
+- **Pankha** for fan and temperature control
+- **Homepage** as a start page with every service
+
+The server itself is only reachable over VPN.
+
+## Storage and backups
+
+- **Longhorn** manages the NVMe drives for the apps
+- **MinIO** is used as S3 storage behind Nextcloud
+- **Backup jobs** copy app data and databases with restic to the backup drive every week
+
+The backup server only accepts new backups and never lets anyone delete or overwrite the old ones, so even a hacked app can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails.
 
 ## Secrets
 
-No passwords or tokens are stored in this repo. They live in [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) and are pulled into the cluster when needed. When one changes, the apps using it restart automatically. Rotating a password is a single command:
+No passwords or tokens are in this repo. They are stored in Bitwarden Secrets Manager and pulled into the cluster when needed, and when one changes the apps using it restart by themselves. Rotating a password is a single command:
 
 ```sh
 task autorotate-postgres app=nextcloud   # new database password, everywhere
@@ -160,7 +158,7 @@ task render-settings                               # turn it into the settings f
 task bootstrap                                     # run on the new machine
 ```
 
-It brings back the apps and config. The data comes back separately, from the backups. The full walkthrough is in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md).
+This brings back the apps and the config, the data comes back separately from the backups. The full walkthrough is in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md).
 
 ## Day to day
 
@@ -171,3 +169,14 @@ task reconcile   # sync with Git right now
 ```
 
 Every change is checked automatically before it's merged, using [kubeconform](https://github.com/yannh/kubeconform) and [flate](https://github.com/home-operations/flate).
+
+Lastly:
+
+### Why Kubernetes instead of simple Docker for a homelab?
+
+I had been experimenting with Docker for a couple of years when I decided to do this.
+The main reasons for me were:
+
+- having an enterprise-like, production-ready server infrastructure under my control to learn and experiment on
+- better structure, with everything written down in one repo that can rebuild the whole server
+- better support for advanced features
