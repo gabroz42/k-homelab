@@ -178,14 +178,3 @@ task reconcile   # sync with Git right now
 ```
 
 Every change is checked automatically before it's merged, using [kubeconform](https://github.com/yannh/kubeconform) and [flate](https://github.com/home-operations/flate).
-
-Lastly:
-
-### Why Kubernetes instead of simple Docker for a homelab?
-
-I had been experimenting with Docker for a couple of years when I decided to do this.
-The main reasons for me were:
-
-- having an enterprise-like, production-ready server infrastructure under my control to learn and experiment on
-- better structure, with everything written down in one repo that can rebuild the whole server
-- better support for advanced features
