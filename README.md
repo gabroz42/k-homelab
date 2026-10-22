@@ -89,7 +89,7 @@ schema               # architecture diagrams
 
 ### Public
 
-Reachable from anywhere through Cloudflare. Most ask you to log in through Authentik first.
+Reachable from anywhere through Cloudflare. Every app signs you in through Authentik.
 
 | Service                                                   | What it's for                                 |
 | --------------------------------------------------------- | --------------------------------------------- |
