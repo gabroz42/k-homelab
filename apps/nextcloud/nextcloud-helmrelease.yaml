@@ -106,20 +106,18 @@ spec:
             'default_phone_region' => 'IT',
             'serverid' => 1,
           ];
-      livenessProbe:
-        enabled: true
-        httpGet:
-          path: /status.php
-          httpHeaders:
-            - name: Host
-              value: "localhost"
+    startupProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      failureThreshold: 60
     resources:
       requests:
         cpu: "250m"
         memory: "512Mi"
       limits:
         cpu: "2"
-        memory: "1Gi"
+        memory: "2Gi"
     cronjob:
       enabled: false
     persistence:
