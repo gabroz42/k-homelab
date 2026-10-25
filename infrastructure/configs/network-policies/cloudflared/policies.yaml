@@ -71,7 +71,7 @@ spec:
 # evaluated, so egress must allow the containers' bridge IPs and inner ports, not the
 # node port. The IPs are pinned in each compose file — change both together:
 #   172.20.0.10:80   ~/server/docker/website   (website_internal_network)
-#   172.23.0.10:3000 ~/server/docker/activity  (compose.override.yml)
+#   172.23.0.10:3000 ~/server/docker/nirva-presentation  (compose.override.yml)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
