@@ -96,5 +96,14 @@ spec:
   selector:
     matchLabels:
       app: cloudflared-matrix
-
-
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cloudflared-websites-pdb
+  namespace: cloudflared
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cloudflared-websites
