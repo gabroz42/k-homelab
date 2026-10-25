@@ -64,3 +64,30 @@ spec:
       ports:
         - port: 9000
           protocol: TCP
+---
+# Websites that still run in Docker on the node (outside the cluster), published on
+# the node IP: 8081 = portfolio (~/server/docker/website), 8082 = activity
+# (~/server/docker/activity).
+# Caveat (tested 2026-10-25): kube-router does not filter pod -> Docker-published
+# node ports (Docker DNATs them before the policy chains), so any pod can reach them
+# regardless of this policy. It states the intent and keeps the tunnel working if
+# that path ever becomes filtered; the real boundary is what the ports serve.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-to-docker-websites
+spec:
+  podSelector:
+    matchLabels:
+      app: cloudflared-websites
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: ${PRIMARY_NODE_IP}/32
+      ports:
+        - port: 8081
+          protocol: TCP
+        - port: 8082
+          protocol: TCP
