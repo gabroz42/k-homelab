@@ -86,3 +86,31 @@ spec:
       ports:
         - port: 22
           protocol: TCP
+---
+# Jobs reach homelab services by their public names (GitLab clone/API, registries):
+# inside the LAN, AdGuard resolves those names to Traefik's LoadBalancer IP, which k3s
+# DNATs to the Traefik pods, and the internet rule above excludes the LAN. Verified with
+# a pod labelled like a job: refused without this rule, HTTP 200 with it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-job-to-traefik
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab-runner-job
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 8000
+          protocol: TCP
+        - port: 8443
+          protocol: TCP
