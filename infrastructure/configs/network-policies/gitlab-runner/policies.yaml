@@ -65,3 +65,25 @@ spec:
           protocol: TCP
         - port: 80
           protocol: TCP
+---
+# CD pipelines deploy over SSH to Docker stacks on this node (e.g. Nirva Studio:
+# .gitlab/cd.yml in work/websites/nirva-presentation). Jobs may otherwise only reach
+# the internet on 80/443, with the LAN excluded. Verified with a pod labelled like a
+# job: blocked without this rule, open with it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-job-ssh-to-node
+spec:
+  podSelector:
+    matchLabels:
+      app: gitlab-runner-job
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: ${PRIMARY_NODE_IP}/32
+      ports:
+        - port: 22
+          protocol: TCP
