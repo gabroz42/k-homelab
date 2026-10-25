@@ -65,13 +65,13 @@ spec:
         - port: 9000
           protocol: TCP
 ---
-# Websites that still run in Docker on the node (outside the cluster), published on
-# the node IP: 8081 = portfolio (~/server/docker/website), 8082 = activity
-# (~/server/docker/activity).
-# Caveat (tested 2026-10-25): kube-router does not filter pod -> Docker-published
-# node ports (Docker DNATs them before the policy chains), so any pod can reach them
-# regardless of this policy. It states the intent and keeps the tunnel working if
-# that path ever becomes filtered; the real boundary is what the ports serve.
+# Websites that still run in Docker on the node (outside the cluster). The tunnel
+# targets their published node ports (http://${PRIMARY_NODE_IP}:8081 portfolio,
+# :8082 Nirva Studio), but Docker DNATs those to the container before this policy is
+# evaluated, so egress must allow the containers' bridge IPs and inner ports, not the
+# node port. The IPs are pinned in each compose file — change both together:
+#   172.20.0.10:80   ~/server/docker/website   (website_internal_network)
+#   172.23.0.10:3000 ~/server/docker/activity  (compose.override.yml)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -85,9 +85,13 @@ spec:
   egress:
     - to:
         - ipBlock:
-            cidr: ${PRIMARY_NODE_IP}/32
+            cidr: 172.20.0.10/32
       ports:
-        - port: 8081
+        - port: 80
           protocol: TCP
-        - port: 8082
+    - to:
+        - ipBlock:
+            cidr: 172.23.0.10/32
+      ports:
+        - port: 3000
           protocol: TCP
