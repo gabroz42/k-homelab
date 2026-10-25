@@ -1,0 +1,22 @@
+# Public-name certificate served by Traefik for LAN clients: AdGuard rewrites
+# gitlab.${PUBLIC_DOMAIN} to Traefik, so home traffic skips the Cloudflare round trip
+# (the edge we get is Hamburg: ~200 ms per request vs ~40 ms direct). Same pattern as Authentik.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gitlab-public-tls
+  namespace: gitlab
+spec:
+  secretName: gitlab-public-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: "gitlab.${PUBLIC_DOMAIN}"
+  dnsNames:
+    - "gitlab.${PUBLIC_DOMAIN}"
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
