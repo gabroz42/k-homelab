@@ -4,4 +4,5 @@ resources:
   - gitlab-pvc.yaml
   - gitlab.yaml
   - gitlab-ingress.yaml
+  - gitlab-certificate.yaml
   - gitlab-backup-cronjob.yaml
