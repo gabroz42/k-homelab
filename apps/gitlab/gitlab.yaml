@@ -53,7 +53,10 @@ spec:
                 gitlab_sshd['enable'] = false
                 gitlab_rails['gitlab_shell_ssh_port'] = 22
 
-                puma['worker_processes'] = 0
+                # 0 = single-process mode (the 2-4 GB setup): one Ruby process served every
+                # request, so a page's parallel requests queued (12 parallel: 54 ms -> 630 ms).
+                # Each extra worker costs ~0.7-1 GB; the memory limit below accounts for 2.
+                puma['worker_processes'] = 2
                 sidekiq['concurrency'] = 5
                 gitlab_rails['env'] = { 'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000' }
                 gitaly['env'] = { 'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000', 'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '2' }
@@ -115,10 +118,10 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 2Gi
+              memory: 3Gi
             limits:
               cpu: "4"
-              memory: 6Gi
+              memory: 8Gi
           volumeMounts:
             - name: config
               mountPath: /etc/gitlab
