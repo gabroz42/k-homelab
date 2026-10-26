@@ -42,11 +42,7 @@ spec:
     cacheCapacity: 2Gi
     cacheStorageClassName: longhorn-single
     pruneIntervalDays: 3650
-    unlock: "2026-09-05-1"
-    retain:
-      daily: 7
-      weekly: 4
-      monthly: 12
+    unlock: "2026-10-26-1"
     moverSecurityContext:
       runAsNonRoot: true
       runAsUser: 1000
