@@ -46,8 +46,7 @@ spec:
           "gitAuthor": "Renovate Bot <renovate-bot@${PUBLIC_DOMAIN}>",
           "cachePrivatePackages": true,
           "cacheTtlOverride": {
-            "datasource-docker-tags": 360,
-            "datasource-docker-releases-v2": 360
+            "datasource-docker-tags": 360
           }
         }
       persistence:
