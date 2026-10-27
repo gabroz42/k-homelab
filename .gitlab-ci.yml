@@ -1,16 +1,21 @@
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
-      changes: &flux_tree
-        - apps/**/*
-        - infrastructure/**/*
-        - clusters/**/*
-        - .gitlab-ci.yml
-        - .github/**/*
-        - renovate.json
     - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
-      changes: *flux_tree
     - if: $CI_PIPELINE_SOURCE == "web"
+
+.flux_tree: &flux_tree
+  - apps/**/*
+  - infrastructure/**/*
+  - clusters/**/*
+  - .gitlab-ci.yml
+  - .github/**/*
+  - renovate.json
+
+.on_flux_changes:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - changes: *flux_tree
 
 variables:
   HOME: /tmp
@@ -19,7 +24,13 @@ variables:
 default:
   interruptible: true
 
+pipeline-ok:
+  image: alpine/k8s:1.37.1
+  script:
+    - echo "pipeline created for $CI_COMMIT_SHORT_SHA"
+
 kubeconform:
+  extends: .on_flux_changes
   image: alpine/k8s:1.37.1
   variables:
     KUBECONFORM_VERSION: v0.6.7
@@ -44,6 +55,7 @@ kubeconform:
       exit $fail
 
 .flate:
+  extends: .on_flux_changes
   image: alpine/k8s:1.37.1
   variables:
     FLATE_VERSION: "0.6.5"
@@ -81,6 +93,7 @@ flate-diff:
   extends: .flate
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes: *flux_tree
   variables:
     GIT_DEPTH: "0"
   script:
