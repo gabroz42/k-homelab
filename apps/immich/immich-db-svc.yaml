@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: postgresql
-          image: tensorchord/cloudnative-pgvecto-rs:16.3-v0.2.1
+          image: pgvector/pgvector:0.8.7-pg16-trixie
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -40,12 +40,6 @@ spec:
               value: immich
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-          command:
-            - "bash"
-            - "-c"
-            - |
-              echo "shared_preload_libraries = 'vectors.so'" >> /var/lib/postgresql/data/postgresql.conf || true
-              docker-entrypoint.sh postgres -c shared_preload_libraries=vectors.so
           ports:
             - containerPort: 5432
           volumeMounts:
