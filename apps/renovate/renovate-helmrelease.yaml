@@ -47,7 +47,7 @@ spec:
           "cachePrivatePackages": true,
           "cacheTtlOverride": {
             "datasource-docker-tags": 360,
-            "datasource-releases-docker": 360
+            "datasource-docker-releases-v2": 360
           }
         }
       persistence:
