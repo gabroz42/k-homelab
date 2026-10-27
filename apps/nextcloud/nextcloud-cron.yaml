@@ -69,9 +69,16 @@ spec:
                   subPath: themes
               env:
                 - name: POSTGRES_HOST
-                  value: nextcloud-postgresql
+                  value: nextcloud-db
                 - name: REDIS_HOST
-                  value: nextcloud-redis-master
+                  value: nextcloud-valkey
+                - name: REDIS_HOST_PORT
+                  value: "6379"
+                - name: REDIS_HOST_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: nextcloud-valkey
+                      key: redis-password
                 - name: PHP_MEMORY_LIMIT
                   value: "2G"
                 - name: S3_ACCESS_KEY
