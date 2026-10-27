@@ -49,7 +49,7 @@
       "automergeStrategy": "squash"
     },
     {
-      "matchUpdateTypes": ["patch"],
+      "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "platformAutomerge": true,
       "automergeStrategy": "squash"
@@ -92,6 +92,11 @@
         "ghcr.io/immich-app/immich-machine-learning"
       ],
       "groupName": "immich"
+    },
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["jellyfin/jellyfin"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(\\.(?<patch>\\d+))?$"
     },
     {
       "matchDatasources": ["docker"],
