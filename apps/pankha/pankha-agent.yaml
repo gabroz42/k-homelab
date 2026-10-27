@@ -66,10 +66,23 @@ spec:
             - -c
             - |
               set -eu
-              wget -q -O /agent/pankha-agent \
-                "https://github.com/Anexgohan/pankha/releases/download/v0.6.4/pankha-agent-linux_x64"
-              chmod +x /agent/pankha-agent
-              cp /config/config.json /agent/config.json
+              if wget -q -O /agent/pankha-agent.new \
+                "https://github.com/Anexgohan/pankha/releases/download/v0.6.4/pankha-agent-linux_x64"; then
+                chmod +x /agent/pankha-agent.new
+                mv /agent/pankha-agent.new /agent/pankha-agent
+              else
+                rm -f /agent/pankha-agent.new
+                [ -x /agent/pankha-agent ]
+              fi
+              if [ -s /agent/config.json ]; then
+                if apk add --no-cache -q jq; then
+                  jq -s '.[0] * .[1]' /agent/config.json /config/config.json > /agent/config.json.new
+                  mv /agent/config.json.new /agent/config.json
+                fi
+              else
+                cp /config/config.json /agent/config.json
+              fi
+              chmod 600 /agent/config.json
           volumeMounts:
             - name: agent-dir
               mountPath: /agent
@@ -121,7 +134,9 @@ spec:
               mountPath: /sys
       volumes:
         - name: agent-dir
-          emptyDir: {}
+          hostPath:
+            path: /var/lib/pankha-agent-homelab
+            type: DirectoryOrCreate
         - name: config
           configMap:
             name: pankha-agent-homelab-config
