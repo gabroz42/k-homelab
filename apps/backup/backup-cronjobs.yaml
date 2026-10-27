@@ -148,11 +148,11 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  until pg_isready -h nextcloud-postgresql -p 5432 -U nextcloud -t 5; do
+                  until pg_isready -h nextcloud-db -p 5432 -U nextcloud -t 5; do
                     echo "waiting for postgres (db/netpol not ready)..."
                     sleep 3
                   done
-                  pg_dump -U nextcloud -h nextcloud-postgresql nextcloud | gzip > /dump/nextcloud-db.sql.gz
+                  pg_dump -U nextcloud -h nextcloud-db nextcloud | gzip > /dump/nextcloud-db.sql.gz
               env:
                 - name: PGPASSWORD
                   valueFrom:

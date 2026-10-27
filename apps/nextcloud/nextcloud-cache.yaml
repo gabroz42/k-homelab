@@ -22,7 +22,18 @@ spec:
       containers:
         - name: valkey
           image: valkey/valkey:9.1.3
-          args: ["--save", "", "--appendonly", "no"]
+          command: ["sh", "-c", "exec valkey-server --save '' --appendonly no --requirepass \"$REDIS_PASSWORD\""]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-valkey
+                  key: redis-password
+            - name: REDISCLI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-valkey
+                  key: redis-password
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
