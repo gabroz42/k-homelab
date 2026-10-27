@@ -6,6 +6,8 @@ workflow:
         - infrastructure/**/*
         - clusters/**/*
         - .gitlab-ci.yml
+        - .github/**/*
+        - renovate.json
     - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
       changes: *flux_tree
     - if: $CI_PIPELINE_SOURCE == "web"
@@ -61,6 +63,14 @@ kubeconform:
       tar -xzf "$tarball" -C "$TOOLS_BIN" flate
       cd "$CI_PROJECT_DIR"
       flate --version
+
+renovate-config:
+  image: ghcr.io/renovatebot/renovate:44.182.2
+  rules:
+    - changes:
+        - renovate.json
+  script:
+    - renovate-config-validator renovate.json
 
 flate:
   extends: .flate
