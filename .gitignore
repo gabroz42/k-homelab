@@ -35,3 +35,5 @@ tmp/
 !scripts/*.sh
 !bootstrap/*.sh
 bootstrap/site.env
+
+schema/\?/
