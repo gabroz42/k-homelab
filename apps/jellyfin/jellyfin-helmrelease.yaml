@@ -5,6 +5,7 @@ metadata:
   namespace: jellyfin
 spec:
   interval: 1h
+  timeout: 60m
   releaseName: jellyfin
   chart:
     spec:
@@ -20,13 +21,13 @@ spec:
       retries: 3
   upgrade:
     remediation:
-      retries: 3
-      remediateLastFailure: true
+      retries: 0
+      remediateLastFailure: false
     cleanupOnFail: true
   values:
     image:
       repository: jellyfin/jellyfin
-      tag: "10.11.11"
+      tag: "12.4"
       pullPolicy: IfNotPresent
 
     replicaCount: 1
@@ -99,4 +100,4 @@ spec:
         port: http
       initialDelaySeconds: 0
       periodSeconds: 10
-      failureThreshold: 60
+      failureThreshold: 180
