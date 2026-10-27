@@ -32,3 +32,21 @@ spec:
     containerPolicies:
       - containerName: postgresql
         controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: nextcloud-db-vpa
+  namespace: nextcloud
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: nextcloud-db
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: postgresql
+        controlledResources: ["memory"]
+        controlledValues: RequestsOnly
