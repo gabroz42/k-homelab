@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: renovate
-      version: "46.380.0"
+      version: "46.385.3"
       sourceRef:
         kind: HelmRepository
         name: renovate
@@ -46,8 +46,7 @@ spec:
           "gitAuthor": "Renovate Bot <renovate-bot@${PUBLIC_DOMAIN}>",
           "cachePrivatePackages": true,
           "cacheTtlOverride": {
-            "datasource-docker-tags": 360,
-            "datasource-releases-docker": 360
+            "datasource-docker-tags": 360
           }
         }
       persistence:

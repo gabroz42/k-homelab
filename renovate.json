@@ -49,7 +49,7 @@
       "automergeStrategy": "squash"
     },
     {
-      "matchUpdateTypes": ["patch"],
+      "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "platformAutomerge": true,
       "automergeStrategy": "squash"
@@ -95,6 +95,11 @@
     },
     {
       "matchDatasources": ["docker"],
+      "matchPackageNames": ["jellyfin/jellyfin"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(\\.(?<patch>\\d+))?$"
+    },
+    {
+      "matchDatasources": ["docker"],
       "matchPackageNames": ["postgres"],
       "groupName": "postgres clients (backups)",
       "matchUpdateTypes": ["minor", "patch"]
@@ -104,14 +109,6 @@
       "matchPackageNames": ["postgres"],
       "matchUpdateTypes": ["major"],
       "enabled": false
-    },
-    {
-      "matchPackageNames": [
-        "nextcloud",
-        "tensorchord/cloudnative-pgvecto-rs"
-      ],
-      "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": true
     }
   ]
 }
