@@ -42,10 +42,10 @@ spec:
     cacheCapacity: 1Gi
     cacheStorageClassName: longhorn-single
     pruneIntervalDays: 3650
+    unlock: "2026-10-26-2"
+    # Writer creds are append-only, so forget must never delete; restic-prune owns retention.
     retain:
-      daily: 7
-      weekly: 4
-      monthly: 12
+      within: "100y"
     moverSecurityContext:
       runAsNonRoot: true
       runAsUser: 1000

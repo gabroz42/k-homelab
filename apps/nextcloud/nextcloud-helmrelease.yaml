@@ -39,12 +39,6 @@ spec:
             - DAC_OVERRIDE
             - SETGID
             - SETUID
-      postgreSqlInitContainer:
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
       host: nextcloud.${PUBLIC_DOMAIN}
       username: gabro
       existingSecret:
@@ -128,40 +122,27 @@ spec:
     internalDatabase:
       enabled: false
     postgresql:
+      enabled: false
+    externalDatabase:
       enabled: true
-      auth:
-        username: nextcloud
-        database: nextcloud
-        existingSecret: nextcloud-secrets
-        secretKeys:
-          userPasswordKey: POSTGRES_PASSWORD
-          adminPasswordKey: POSTGRES_PASSWORD
-      primary:
-        persistence:
-          enabled: true
-          size: 8Gi
-          storageClass: longhorn
-        resources:
-          requests:
-            cpu: 100m
-            memory: 256Mi
-          limits:
-            memory: 512Mi
-      postgresqlExtendedConf:
-        shared_buffers: "256MB"
-        effective_cache_size: "1GB"
-        work_mem: "8MB"
+      type: postgresql
+      host: nextcloud-db
+      database: nextcloud
+      existingSecret:
+        enabled: true
+        secretName: nextcloud-db
+        usernameKey: db-username
+        passwordKey: db-password
     redis:
+      enabled: false
+    externalRedis:
       enabled: true
-      replica:
-        replicaCount: 0
-      master:
-        resources:
-          requests:
-            cpu: 50m
-            memory: 128Mi
-          limits:
-            memory: 256Mi
+      host: nextcloud-valkey
+      port: "6379"
+      existingSecret:
+        enabled: true
+        secretName: nextcloud-valkey
+        passwordKey: redis-password
     ingress:
       enabled: true
       className: traefik
