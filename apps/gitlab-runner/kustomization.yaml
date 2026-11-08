@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
   - gitlab-runner-externalsecret.yaml
   - gitlab-runner-helmrelease.yaml
+  - runner-cache-externalsecret.yaml
+  - runner-cache-helmrelease.yaml
+  - runner-cache-setup-job.yaml

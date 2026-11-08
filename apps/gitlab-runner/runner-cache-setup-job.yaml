@@ -1,0 +1,77 @@
+# Creates the cache bucket and its 14-day expiry in the runner cache MinIO. Idempotent;
+# Flux recreates the Job when this file changes (force annotation: Job specs are immutable).
+# The script uses plain $VAR (no braces) on purpose: Flux substitutes the braced form here.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: runner-cache-setup
+  namespace: gitlab-runner
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app: runner-cache-setup
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mc
+          image: quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
+          env:
+            - name: HOME
+              value: /tmp
+            - name: MC_CONFIG_DIR
+              value: /tmp/mc
+            - name: ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: runner-cache-root
+                  key: rootUser
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: runner-cache-root
+                  key: rootPassword
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until mc alias set cache http://runner-cache-minio:9000 "$ACCESS_KEY" "$SECRET_KEY" >/dev/null 2>&1; do
+                echo "waiting for runner-cache-minio"; sleep 5
+              done
+              mc mb --ignore-existing cache/gitlab-runner-cache
+              if mc ilm rule ls cache/gitlab-runner-cache >/dev/null 2>&1; then
+                echo "lifecycle already set"
+              else
+                mc ilm rule add --expire-days 14 cache/gitlab-runner-cache
+              fi
+              mc ilm rule ls cache/gitlab-runner-cache
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
