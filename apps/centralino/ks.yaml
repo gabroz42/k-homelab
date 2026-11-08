@@ -1,3 +1,50 @@
+# Centralino (ESP32 home-automation panel) lives in its own repo, server/centralino:
+# page, nginx config and manifests (root kustomization.yaml). Flux pulls it from the
+# in-cluster GitLab and fills ${ESP32_*_IP} / ${PUBLIC_DOMAIN} from cluster-settings.
+# Its egress policy stays here (infrastructure/configs/network-policies/centralino).
+---
+# Bitwarden: deploy token of server/centralino (scope read_repository)
+#   flux-system/centralino-git/username  the token's username (GitLab rejects any other)
+#   flux-system/centralino-git/token     the token
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: centralino-git
+  namespace: flux-system
+spec:
+  refreshInterval: 12h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: bitwarden-secretsmanager
+  target:
+    name: centralino-git
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        username: "{{ .username }}"
+        password: "{{ .token }}"
+  data:
+    - secretKey: username
+      remoteRef:
+        key: flux-system/centralino-git/username
+    - secretKey: token
+      remoteRef:
+        key: flux-system/centralino-git/token
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: centralino
+  namespace: flux-system
+spec:
+  interval: 5m
+  timeout: 60s
+  ref:
+    branch: main
+  url: http://gitlab.gitlab.svc.cluster.local/server/centralino.git
+  secretRef:
+    name: centralino-git
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -10,8 +57,8 @@ spec:
   timeout: 10m
   sourceRef:
     kind: GitRepository
-    name: flux-system
-  path: ./apps/centralino
+    name: centralino
+  path: ./
   prune: true
   wait: false
   postBuild:
