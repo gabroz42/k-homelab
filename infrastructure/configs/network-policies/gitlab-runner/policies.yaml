@@ -115,3 +115,49 @@ spec:
           protocol: TCP
         - port: 8443
           protocol: TCP
+---
+# CI cache (apps/gitlab-runner/runner-cache-*): the runner manager, job pods (the helper
+# container moves cache archives) and the bucket setup Job reach the cache MinIO's S3 API.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-to-runner-cache
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [gitlab-runner, gitlab-runner-job, runner-cache-setup]
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: minio
+              release: runner-cache
+      ports:
+        - port: 9000
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-runner-cache-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: minio
+      release: runner-cache
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [gitlab-runner, gitlab-runner-job, runner-cache-setup]
+      ports:
+        - port: 9000
+          protocol: TCP

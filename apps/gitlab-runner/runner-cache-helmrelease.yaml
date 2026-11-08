@@ -1,0 +1,74 @@
+# S3 cache for CI jobs (`cache:` in .gitlab-ci.yml), kept apart from the main MinIO
+# (apps/minio) so throwaway cache never lands in its VolSync/restic backups. On the
+# node's local disk (local-path): disposable, fastest, no Longhorn replica. Objects
+# expire after 14 days (runner-cache-setup-job.yaml). No chart buckets/users/policies:
+# the chart's post-install job has no securityContext and Kyverno would deny it.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: runner-cache
+  namespace: gitlab-runner
+spec:
+  interval: 1h
+  releaseName: runner-cache
+  chart:
+    spec:
+      chart: minio
+      version: "5.4.0"
+      sourceRef:
+        kind: HelmRepository
+        name: minio
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+    cleanupOnFail: true
+  values:
+    mode: standalone
+    replicas: 1
+    existingSecret: runner-cache-root
+    securityContext:
+      enabled: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: "OnRootMismatch"
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      readOnlyRootFilesystem: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    # The chart ships a default console user, created by that same post-install job
+    users: []
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 30Gi
+    resources:
+      requests:
+        cpu: 20m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    service:
+      type: ClusterIP
+      port: "9000"
+    consoleService:
+      type: ClusterIP
+    ingress:
+      enabled: false
+    consoleIngress:
+      enabled: false
+    metrics:
+      serviceMonitor:
+        enabled: false

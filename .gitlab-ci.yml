@@ -103,7 +103,11 @@ flate-diff:
     GIT_DEPTH: "0"
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-    - flate diff all --path . --base "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" | tee flate-diff.txt
+    # Baseline tree made here instead of --base, so it gets the same centralino page
+    # stand-in as the working tree (see .flate)
+    - git worktree add --detach /tmp/flate-base "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - mkdir -p /tmp/flate-base/apps/centralino/site && touch /tmp/flate-base/apps/centralino/site/centralino.html
+    - flate diff all --path . --path-orig /tmp/flate-base | tee flate-diff.txt
   artifacts:
     expose_as: flate diff
     paths:

@@ -44,6 +44,9 @@ spec:
         memory: 256Mi
     runners:
       secret: gitlab-runner
+      # S3 keys for [runners.cache] below (CACHE_S3_ACCESS_KEY / CACHE_S3_SECRET_KEY)
+      cache:
+        secretName: runner-cache-s3
       config: |
         [[runners]]
           request_concurrency = 2
@@ -51,6 +54,17 @@ spec:
           environment = ["HOME=/tmp"]
           [runners.feature_flags]
             FF_USE_ADVANCED_POD_SPEC_CONFIGURATION = true
+          # Shared CI cache: the runner cache MinIO (runner-cache-helmrelease.yaml). The
+          # manager presigns URLs; job pods (helper container) upload/download directly.
+          [runners.cache]
+            Type = "s3"
+            Shared = true
+            [runners.cache.s3]
+              ServerAddress = "runner-cache-minio.gitlab-runner.svc.cluster.local:9000"
+              BucketName = "gitlab-runner-cache"
+              BucketLocation = "us-east-1"
+              Insecure = true
+              AuthenticationType = "access-key"
           [runners.kubernetes]
             namespace = "{{ .Release.Namespace }}"
             image = "alpine:3.22"
