@@ -42,6 +42,8 @@ kubeconform:
     - |
       set -eu
       fail=0
+      # Flux copies the page in from server/centralino; stand in for it here
+      mkdir -p apps/centralino/site && touch apps/centralino/site/centralino.html
       for d in clusters/homelab infrastructure/configs infrastructure/controllers apps/*/; do
         d="${d%/}"
         [ -f "$d/kustomization.yaml" ] || continue

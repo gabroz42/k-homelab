@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: centralino
+resources:
+  - authentik-forward-auth.yaml
+  - centralino.yaml
+  - centralino-ingress.yaml
+configMapGenerator:
+  - name: centralino-nginx
+    files:
+      - default.conf=nginx.conf
+  - name: centralino-site
+    files:
+      # site/ is filled by Flux from server/centralino (GitRepository include, see ks.yaml)
+      - index.html=site/centralino.html
+    options:
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
