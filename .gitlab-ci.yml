@@ -77,6 +77,9 @@ kubeconform:
       tar -xzf "$tarball" -C "$TOOLS_BIN" flate
       cd "$CI_PROJECT_DIR"
       flate --version
+      # apps/centralino/site/ is filled by Flux from server/centralino (GitRepository
+      # include); flate renders the centralino source from this tree, so stand in for it
+      mkdir -p apps/centralino/site && touch apps/centralino/site/centralino.html
 
 renovate-config:
   image: ghcr.io/renovatebot/renovate:44.182.2
