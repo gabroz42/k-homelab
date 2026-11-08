@@ -11,7 +11,8 @@ configMapGenerator:
       - default.conf=nginx.conf
   - name: centralino-site
     files:
-      - index.html=site/index.html
+      # site/ is filled by Flux from server/centralino (GitRepository include, see ks.yaml)
+      - index.html=site/centralino.html
     options:
       annotations:
         kustomize.toolkit.fluxcd.io/substitute: disabled

@@ -37,3 +37,6 @@ tmp/
 bootstrap/site.env
 
 schema/\?/
+
+# Filled by Flux from server/centralino (apps/centralino/ks.yaml); never commit it
+apps/centralino/site/
