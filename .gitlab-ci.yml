@@ -25,13 +25,13 @@ default:
   interruptible: true
 
 pipeline-ok:
-  image: alpine/k8s:1.37.1
+  image: alpine/k8s:1.37.2
   script:
     - echo "pipeline created for $CI_COMMIT_SHORT_SHA"
 
 kubeconform:
   extends: .on_flux_changes
-  image: alpine/k8s:1.37.1
+  image: alpine/k8s:1.37.2
   variables:
     KUBECONFORM_VERSION: v0.6.7
   before_script:
@@ -58,7 +58,7 @@ kubeconform:
 
 .flate:
   extends: .on_flux_changes
-  image: alpine/k8s:1.37.1
+  image: alpine/k8s:1.37.2
   variables:
     FLATE_VERSION: "0.6.5"
     KUBERNETES_MEMORY_REQUEST: 1Gi
