@@ -24,6 +24,17 @@ spec:
       remediateLastFailure: true
     cleanupOnFail: true
   values:
+    # MinIO stopped publishing images (quay.io answers 401, Docker Hub repos removed in
+    # 2026); this is a copy of the last image the node had, in the cluster registry.
+    image:
+      repository: registry.local.gabro.ovh/mirror/minio
+      tag: RELEASE.2024-12-18T13-15-44Z
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: registry-pull
+    # One writer on the volume: stop the old pod before starting the new one
+    deploymentUpdate:
+      type: Recreate
     mode: standalone
     securityContext:
       enabled: true
@@ -65,17 +76,9 @@ spec:
     consoleService:
       type: ClusterIP
 
-    buckets:
-      - name: nextcloud
-        policy: none
-        purge: false
-        versioning: true
-
-    users:
-      - accessKey: nextcloud-access-key
-        existingSecret: minio-nextcloud-user
-        existingSecretKey: secretKey
-        policy: readwrite
+    # The nextcloud bucket and user are made by minio-setup-job.yaml: the chart's
+    # post-install job has no securityContext, so Kyverno would deny it.
+    users: []
 
     ingress:
       enabled: false

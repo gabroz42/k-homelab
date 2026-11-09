@@ -18,6 +18,8 @@ spec:
     spec:
       restartPolicy: OnFailure
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: registry-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -26,9 +28,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: mc
-          # The MinIO server image bundles mc (same mc release the chart used). quay.io now
-          # answers 401 for minio/mc; this image is already on the node (apps/minio).
-          image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
+          # The MinIO server image bundles mc; mirrored copy (see runner-cache-helmrelease.yaml)
+          image: registry.local.gabro.ovh/mirror/minio:RELEASE.2024-12-18T13-15-44Z
           imagePullPolicy: IfNotPresent
           env:
             - name: HOME

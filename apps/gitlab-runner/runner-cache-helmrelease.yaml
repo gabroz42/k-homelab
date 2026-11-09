@@ -29,6 +29,17 @@ spec:
       remediateLastFailure: true
     cleanupOnFail: true
   values:
+    # MinIO stopped publishing images (quay.io answers 401, Docker Hub repos removed in
+    # 2026); this is the same mirrored image as apps/minio.
+    image:
+      repository: registry.local.gabro.ovh/mirror/minio
+      tag: RELEASE.2024-12-18T13-15-44Z
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: registry-pull
+    # One writer on the volume: stop the old pod before starting the new one
+    deploymentUpdate:
+      type: Recreate
     mode: standalone
     replicas: 1
     existingSecret: runner-cache-root
