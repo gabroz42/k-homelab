@@ -57,8 +57,15 @@ spec:
                 # request, so a page's parallel requests queued (12 parallel: 54 ms -> 630 ms).
                 # Each extra worker costs ~0.7-1 GB; the memory limit below accounts for 2.
                 puma['worker_processes'] = 2
+                # Memory watchdog: a worker past this RSS is restarted gracefully (a fresh fork
+                # of the master). Unset, workers grew to ~1.3-1.5 GB; they boot well under 1 GB.
+                puma['per_worker_max_memory_mb'] = 1024
                 sidekiq['concurrency'] = 5
-                gitlab_rails['env'] = { 'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000' }
+                # Sidekiq restarts itself gracefully past this RSS (KB; default 2 GB, idle ~1.3 GB)
+                gitlab_rails['env'] = {
+                  'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000',
+                  'SIDEKIQ_MEMORY_KILLER_MAX_RSS' => '1200000'
+                }
                 gitaly['env'] = { 'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000', 'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '2' }
                 prometheus_monitoring['enable'] = false
                 registry['enable'] = false
