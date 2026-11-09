@@ -3,5 +3,7 @@ kind: Kustomization
 resources:
   - minio-externalsecret.yaml
   - minio-helmrelease.yaml
+  - minio-setup-job.yaml
+  - registry-pull-externalsecret.yaml
   - minio-ingress.yaml
   - minio-vpa.yaml

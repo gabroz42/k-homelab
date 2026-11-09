@@ -1,0 +1,85 @@
+# Creates the nextcloud bucket (versioned) and the nextcloud user, as the chart's
+# buckets/users values did. Idempotent: safe on the existing data. Flux recreates the Job
+# when this file changes (force annotation: Job specs are immutable).
+# The script uses plain $VAR (no braces) on purpose: Flux substitutes the braced form here.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-setup
+  namespace: minio
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app: minio-setup
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mc
+          # The MinIO server image bundles mc
+          image: registry.local.gabro.ovh/mirror/minio:RELEASE.2024-12-18T13-15-44Z
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HOME
+              value: /tmp
+            - name: MC_CONFIG_DIR
+              value: /tmp/mc
+            - name: ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: rootUser
+            - name: ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: rootPassword
+            - name: NEXTCLOUD_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: minio-nextcloud-user
+                  key: secretKey
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until mc alias set m http://minio:9000 "$ROOT_USER" "$ROOT_PASSWORD" >/dev/null 2>&1; do
+                echo "waiting for minio"; sleep 5
+              done
+              mc mb --ignore-existing m/nextcloud
+              mc version enable m/nextcloud
+              mc admin user add m nextcloud-access-key "$NEXTCLOUD_SECRET"
+              mc admin policy attach m readwrite --user nextcloud-access-key 2>&1 | grep -v "already" || true
+              mc admin user info m nextcloud-access-key
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
