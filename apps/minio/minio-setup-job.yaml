@@ -62,7 +62,13 @@ spec:
               mc mb --ignore-existing m/nextcloud
               mc version enable m/nextcloud
               mc admin user add m nextcloud-access-key "$NEXTCLOUD_SECRET"
-              mc admin policy attach m readwrite --user nextcloud-access-key 2>&1 | grep -v "already" || true
+              # The image has no grep: match "already attached" with case
+              if ! out=$(mc admin policy attach m readwrite --user nextcloud-access-key 2>&1); then
+                case "$out" in
+                  *already*) echo "readwrite already attached" ;;
+                  *) echo "$out"; exit 1 ;;
+                esac
+              fi
               mc admin user info m nextcloud-access-key
           securityContext:
             allowPrivilegeEscalation: false
