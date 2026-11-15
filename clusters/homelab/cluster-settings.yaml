@@ -4,7 +4,7 @@ metadata:
   name: cluster-settings
   namespace: flux-system
 data:
-  PUBLIC_DOMAIN: gabro.ovh
+  PUBLIC_DOMAIN: gbroccoli.dev
   TIMEZONE: Europe/Rome
   LB_RANGE: 192.168.1.55-192.168.1.100
   PRIMARY_NODE_IP: 192.168.1.10
@@ -25,6 +25,6 @@ data:
   CLUSTER_NAME: homelab
   BW_ORG_ID: c8536524-d9a3-48f5-a4cf-b41600bd0ee6
   BW_PROJECT_ID: eb7f19cd-99ea-4888-95f7-b41600be7baf
-  LOCAL_DOMAIN: local.gabro.ovh
+  LOCAL_DOMAIN: local.gbroccoli.dev
   MATRIX_SERVER_NAME: matrix.gabro.ovh
   LETSENCRYPT_EMAIL: gabriele.broccoli@gmail.com

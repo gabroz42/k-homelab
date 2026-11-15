@@ -263,7 +263,7 @@ data:
               href: https://kubernetes.io/docs/
         - Personal Website:
             - abbr: GB
-              href: https://website.${PUBLIC_DOMAIN}
+              href: https://resume.${PUBLIC_DOMAIN}
 
   widgets.yaml: |
     - resources:

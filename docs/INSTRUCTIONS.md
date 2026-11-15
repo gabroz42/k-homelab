@@ -121,7 +121,7 @@ without being the same fact, like the pankha agent identity names — are allowl
 
 End to end, when you push a one-line edit to `apps/nextcloud/nextcloud-helmrelease.yaml`:
 
-1. GitHub receives the push, fires the webhook at `flux-webhook.gabro.ovh`.
+1. GitHub receives the push, fires the webhook at `flux-webhook.gbroccoli.dev`.
 2. `notification-controller`'s `Receiver` tells the `GitRepository` to fetch *now*.
 3. source-controller pulls the new commit, exposes it as an artifact.
 4. kustomize-controller notices `apps` (and the per-app `nextcloud` Kustomization) point at a changed source — it rebuilds, substitutes, server-side-applies.
@@ -222,8 +222,8 @@ All secret values live in **Bitwarden Secrets Manager**. The cluster never store
 
 ## 6. Networking a new service
 
-- **Public** (`*.gabro.ovh`): create a Cloudflare tunnel, store its token in Bitwarden, add a tunnel Deployment under `apps/cloudflared/tunnels/`. TLS terminates at Cloudflare's edge, so the in-cluster Ingress is plain HTTP.
-- **Local** (`*.local.gabro.ovh`): add an AdGuard DNS rewrite → Traefik's LB IP. The Ingress references `secretName: wildcard-local-tls` (Reflector mirrors the wildcard cert into every namespace). Traefik `IngressRoute`s use `entryPoints: [websecure]` + `tls: {}` and pick up the wildcard from the `default` `TLSStore`.
+- **Public** (`*.gbroccoli.dev`): create a Cloudflare tunnel, store its token in Bitwarden, add a tunnel Deployment under `apps/cloudflared/tunnels/`. TLS terminates at Cloudflare's edge, so the in-cluster Ingress is plain HTTP.
+- **Local** (`*.local.gbroccoli.dev`): add an AdGuard DNS rewrite → Traefik's LB IP. The Ingress references `secretName: wildcard-local-tls` (Reflector mirrors the wildcard cert into every namespace). Traefik `IngressRoute`s use `entryPoints: [websecure]` + `tls: {}` and pick up the wildcard from the `default` `TLSStore`.
 - **SSO**: attach the `forward-auth` Traefik middleware to the Ingress to gate it behind Authentik.
 
 Every namespace is default-deny. A new external egress endpoint means editing that namespace's file in `infrastructure/configs/network-policies/`.
