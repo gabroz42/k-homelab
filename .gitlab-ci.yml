@@ -82,7 +82,7 @@ kubeconform:
       mkdir -p apps/centralino/site && touch apps/centralino/site/centralino.html
 
 renovate-config:
-  image: ghcr.io/renovatebot/renovate:44.226.1
+  image: ghcr.io/renovatebot/renovate:44.239.1
   rules:
     - changes:
         - renovate.json
