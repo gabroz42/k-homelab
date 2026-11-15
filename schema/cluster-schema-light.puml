@@ -58,7 +58,7 @@ node "  **homelab**  //Ryzen 5 2600X · 32 GB//  " as host {
     rectangle "**Authentik**  //login//" as auth
   }
 
-  frame "Public   *.gabro.ovh" as pub {
+  frame "Public   *.gbroccoli.dev" as pub {
     rectangle "**Jellyfin**" as jf
     rectangle "**Immich**" as im
     rectangle "**Nextcloud**" as nc
@@ -70,7 +70,7 @@ node "  **homelab**  //Ryzen 5 2600X · 32 GB//  " as host {
     rectangle "**GitLab**" as gl
   }
 
-  frame "Home only   *.local.gabro.ovh" as home {
+  frame "Home only   *.local.gbroccoli.dev" as home {
     rectangle "***arr stack**" as sarr
     rectangle "**Homepage**" as hp
     rectangle "**Headlamp**" as hl

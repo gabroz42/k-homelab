@@ -71,14 +71,14 @@ task rotate-tunnel svc=jellyfin
 
 The task force-syncs the ExternalSecret and rolls `deploy/cloudflared-<svc>`. Brief downtime (~10s) for that public hostname during the rollout.
 
-Reminder: `flux-webhook.gabro.ovh` and `authentik.gabro.ovh` ride on the **same** tunnel (the one whose token is at `cloudflared/authentik-tunnel-token/token`). Rotating it affects both hostnames at once.
+Reminder: `flux-webhook.gbroccoli.dev` and `authentik.gbroccoli.dev` ride on the **same** tunnel (the one whose token is at `cloudflared/authentik-tunnel-token/token`). Rotating it affects both hostnames at once.
 
 ### 2.3 Other external-provider tokens
 
 | Secret | Where to generate | BW path | Rotation task |
 |---|---|---|---|
-| Cloudflare API token (cert-manager DNS-01) | CF dash → "My Profile" → API Tokens. Permissions: Zone:DNS:Edit on `gabro.ovh`. | `cert-manager/cloudflare-api-token/api-token` | `rotate-cloudflare-api` |
-| GitHub webhook HMAC | GitHub repo → Settings → Webhooks → edit `flux-webhook.gabro.ovh` → regenerate secret. | `flux-system/github-webhook-token/token` | `rotate-webhook-hmac` |
+| Cloudflare API token (cert-manager DNS-01) | CF dash → "My Profile" → API Tokens. Permissions: Zone:DNS:Edit on `gbroccoli.dev`. | `cert-manager/cloudflare-api-token/api-token` | `rotate-cloudflare-api` |
+| GitHub webhook HMAC | GitHub repo → Settings → Webhooks → edit `flux-webhook.gbroccoli.dev` → regenerate secret. | `flux-system/github-webhook-token/token` | `rotate-webhook-hmac` |
 
 ### 2.4 Postgres passwords (`task autorotate-postgres app=<name>`)
 
