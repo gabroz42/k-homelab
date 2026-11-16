@@ -4,7 +4,7 @@ metadata:
   name: radarr
   namespace: jellyfin
 spec:
-  replicas: 1
+  replicas: 0
   strategy:
     type: Recreate
   selector:
@@ -23,7 +23,7 @@ spec:
         kubernetes.io/hostname: ${PRIMARY_NODE}
       containers:
         - name: radarr
-          image: lscr.io/linuxserver/radarr:6.4.4.10685-ls327
+          image: lscr.io/linuxserver/radarr:7.0.3.10918-ls328
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
