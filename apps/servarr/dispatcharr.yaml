@@ -46,7 +46,7 @@ spec:
               memory: 512Mi
             limits:
               cpu: "2"
-              memory: 2Gi
+              memory: 6Gi
           volumeMounts:
             - name: config
               mountPath: /data
