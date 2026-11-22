@@ -21,7 +21,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: valkey
-          image: valkey/valkey:9.1.3
+          image: valkey/valkey:9.2.0
           command: ["sh", "-c", "exec valkey-server --save '' --appendonly no --requirepass \"$REDIS_PASSWORD\""]
           env:
             - name: REDIS_PASSWORD
