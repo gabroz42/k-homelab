@@ -91,7 +91,7 @@ spec:
         memory: "1Gi"
       limits:
         cpu: "6"
-        memory: "2Gi"
+        memory: "5Gi"
 
     startupProbe:
       tcpSocket: null
