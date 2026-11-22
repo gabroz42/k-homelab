@@ -37,6 +37,9 @@ jobs:
           sudo install /tmp/kubeconform /usr/local/bin/kubeconform
           kubeconform -v
 
+      - name: Stub centralino page
+        run: mkdir -p apps/centralino/site && touch apps/centralino/site/centralino.html
+
       - name: Validate
         run: |
           set -euo pipefail
@@ -63,6 +66,9 @@ jobs:
       - uses: home-operations/flate/action@main
         with:
           base: ""
+
+      - name: Stub centralino page
+        run: mkdir -p apps/centralino/site && touch apps/centralino/site/centralino.html
 
       - name: Validate Kustomizations and HelmReleases
         run: flate test all --path .
