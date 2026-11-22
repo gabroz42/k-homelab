@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - alertmanager.${LOCAL_DOMAIN}
+      secretName: wildcard-local-tls
+  rules:
+    - host: alertmanager.${LOCAL_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: monitoring-kube-prometheus-alertmanager
+                port:
+                  number: 9093

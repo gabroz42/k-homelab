@@ -15,28 +15,46 @@ spec:
           labels:
             severity: critical
           annotations:
+            title: "⚡ Manca la corrente"
+            title_resolved: "✅ La corrente è tornata"
+            color: "#e65100"
             summary: "UPS: mancanza di corrente, il server va a batteria"
-            description: "L'UPS è passato all'alimentazione a batteria. Carica attuale: {{ with query \"max(network_ups_tools_battery_charge{job='nut-exporter'})\" }}{{ . | first | value }}{{ end }}%. Riceverai un'email di risoluzione quando la corrente torna."
+            description: "L'UPS è passato alla batteria: in casa è saltata la corrente. Il server e il router continuano a funzionare finché la batteria regge."
+            description_resolved: "L'UPS è tornato sulla rete elettrica. Il server funziona normalmente."
+            battery_charge: '{{ with query "max(network_ups_tools_battery_charge{job=''nut-exporter''})" }}{{ . | first | value | printf "%.0f" }}{{ end }}'
         - alert: UpsLowBattery
           expr: max(network_ups_tools_ups_status{job="nut-exporter", flag="LB"}) == 1
           labels:
             severity: critical
           annotations:
+            title: "🔴 Batteria UPS quasi scarica"
+            title_resolved: "✅ Batteria UPS di nuovo carica"
+            color: "#c62828"
             summary: "UPS: batteria quasi scarica, spegnimento imminente"
-            description: "La batteria dell'UPS è quasi esaurita. Il server si spegnerà a breve in modo sicuro."
+            description: "La batteria dell'UPS è quasi esaurita. Il server si sta per spegnere in modo sicuro per proteggere i dati."
+            description_resolved: "La batteria dell'UPS non è più in riserva."
+            battery_charge: '{{ with query "max(network_ups_tools_battery_charge{job=''nut-exporter''})" }}{{ . | first | value | printf "%.0f" }}{{ end }}'
         - alert: UpsReplaceBattery
           expr: max(network_ups_tools_ups_status{job="nut-exporter", flag="RB"}) == 1
           for: 10m
           labels:
             severity: warning
           annotations:
+            title: "🔋 Batteria UPS da cambiare"
+            title_resolved: "✅ Batteria UPS a posto"
+            color: "#b26a00"
             summary: "UPS: la batteria va sostituita"
-            description: "L'UPS segnala che la batteria è esaurita o non tiene più la carica e va sostituita."
+            description: "L'UPS segnala che la batteria non tiene più la carica. Va sostituita: durante un blackout il server potrebbe spegnersi quasi subito."
+            description_resolved: "L'UPS non segnala più la batteria da sostituire."
         - alert: UpsUnreachable
           expr: (max(up{job="nut-exporter"}) or vector(0)) == 0
           for: 5m
           labels:
             severity: warning
           annotations:
+            title: "⚠️ UPS non raggiungibile"
+            title_resolved: "✅ UPS di nuovo raggiungibile"
+            color: "#455a64"
             summary: "UPS: comunicazione persa"
-            description: "Prometheus non riesce a leggere lo stato dell'UPS da 5 minuti. Controlla il cavo USB, il servizio NUT sul server e il pod nut-exporter."
+            description: "Da 5 minuti il server non riesce a leggere lo stato dell'UPS, quindi non saprebbe avvisare in caso di blackout. Controlla il cavo USB tra UPS e server."
+            description_resolved: "Il server legge di nuovo lo stato dell'UPS."
