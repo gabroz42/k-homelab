@@ -15,9 +15,6 @@ _My home Kubernetes cluster, fully self-hosted and run straight from this repo._
 
 ---
 
-Welcome to my homelab repo,
-here is a full presentation of my own Kubernetes cluster.
-
 Everything running on the server is described in this repo. I edit a file, push it, and the cluster updates itself to match, so nothing is configured by hand.
 
 ## The hardware
