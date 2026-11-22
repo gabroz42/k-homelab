@@ -67,6 +67,8 @@ spec:
     alertmanager:
       enabled: true
       alertmanagerSpec:
+        useExistingSecret: true
+        configSecret: alertmanager-config
         resources:
           requests:
             cpu: 50m
@@ -89,15 +91,6 @@ spec:
                       operator: In
                       values:
                         - ${STATELESS_NODE}
-      config:
-        route:
-          receiver: 'null'
-          group_by: ['alertname', 'namespace']
-          group_wait: 30s
-          group_interval: 5m
-          repeat_interval: 4h
-        receivers:
-          - name: 'null'
 
     kubeStateMetrics:
       enabled: true
