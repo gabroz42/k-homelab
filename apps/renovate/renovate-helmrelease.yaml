@@ -33,6 +33,8 @@ spec:
       jobBackoffLimit: "0"
       activeDeadlineSeconds: 3600
     existingSecret: renovate
+    env:
+      GITLAB_IGNORE_REPO_URL: "true"
     renovate:
       config: |
         {
@@ -52,7 +54,7 @@ spec:
       persistence:
         cache:
           enabled: true
-          storageSize: 1Gi
+          storageSize: 2Gi
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
