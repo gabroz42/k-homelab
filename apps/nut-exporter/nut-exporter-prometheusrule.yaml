@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ups-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: ups.rules
+      rules:
+        - alert: UpsOnBattery
+          expr: max(network_ups_tools_ups_status{job="nut-exporter", flag="OB"}) == 1
+          for: 30s
+          labels:
+            severity: critical
+          annotations:
+            summary: "UPS: mancanza di corrente, il server va a batteria"
+            description: "L'UPS è passato all'alimentazione a batteria. Carica attuale: {{ with query \"max(network_ups_tools_battery_charge{job='nut-exporter'})\" }}{{ . | first | value }}{{ end }}%. Riceverai un'email di risoluzione quando la corrente torna."
+        - alert: UpsLowBattery
+          expr: max(network_ups_tools_ups_status{job="nut-exporter", flag="LB"}) == 1
+          labels:
+            severity: critical
+          annotations:
+            summary: "UPS: batteria quasi scarica, spegnimento imminente"
+            description: "La batteria dell'UPS è quasi esaurita. Il server si spegnerà a breve in modo sicuro."
+        - alert: UpsReplaceBattery
+          expr: max(network_ups_tools_ups_status{job="nut-exporter", flag="RB"}) == 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "UPS: la batteria va sostituita"
+            description: "L'UPS segnala che la batteria è esaurita o non tiene più la carica e va sostituita."
+        - alert: UpsUnreachable
+          expr: (max(up{job="nut-exporter"}) or vector(0)) == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "UPS: comunicazione persa"
+            description: "Prometheus non riesce a leggere lo stato dell'UPS da 5 minuti. Controlla il cavo USB, il servizio NUT sul server e il pod nut-exporter."

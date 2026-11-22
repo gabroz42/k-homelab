@@ -9,6 +9,7 @@ resources:
   - cert-manager-config/ks.yaml
   - cloudflared/ks.yaml
   - external-secrets-config/ks.yaml
+  - flux-alerts/ks.yaml
   - flux-webhook/ks.yaml
   - flux-mirror/ks.yaml
   - gitlab-runner/ks.yaml
