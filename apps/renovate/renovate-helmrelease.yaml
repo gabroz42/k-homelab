@@ -49,7 +49,13 @@ spec:
           "cachePrivatePackages": true,
           "cacheTtlOverride": {
             "datasource-docker-tags": 360
-          }
+          },
+          "logLevelRemap": [
+            {
+              "matchMessage": "GITLAB_IGNORE_REPO_URL environment variable is deprecated*",
+              "newLogLevel": "info"
+            }
+          ]
         }
       persistence:
         cache:
