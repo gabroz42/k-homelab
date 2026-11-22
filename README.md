@@ -2,7 +2,7 @@
 
 # 🏠 K-Homelab
 
-_My home Kubernetes cluster, fully self-hosted and run straight from this repo._
+_My home server. Built from old PC parts and GitOps-managed from this repo through Flux._
 
 [![k3s](https://img.shields.io/badge/k3s-FFC61C?style=for-the-badge&logo=k3s&logoColor=black)](https://k3s.io)
 [![Flux](https://img.shields.io/badge/Flux-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
@@ -15,14 +15,13 @@ _My home Kubernetes cluster, fully self-hosted and run straight from this repo._
 
 ---
 
-Welcome to my homelab repo,
-here is a full presentation of my own Kubernetes cluster.
+A single k3s node that hosts what I use every day: photos, cloud storage, media, private chat, and the GitLab where this repo lives.
 
-Everything running on the server is described in this repo. I edit a file, push it, and the cluster updates itself to match, so nothing is configured by hand.
+No changes are made on the server directly. Configurations are pushed here, then Flux applies the changes. Passwords are kept in Bitwarden, backups run every week, and there's a script to rebuild everything on a new machine.
 
 ## The hardware
 
-Almost all hardware used was recycled from previous upgrades, found lying around or gifted by friends. The only things I had to buy were the micro-ATX parts (mobo, case and PSU, the cheapest I could find).
+Almost all hardware used was recycled from previous PC upgrades or gifted by friends. The only things I had to buy were the micro-ATX parts (mobo, case and PSU, the cheapest I could find).
 
 | Part              | What                       |
 | ----------------- | -------------------------- |
@@ -38,13 +37,13 @@ The system and the cloud storage services that need to be fast run on the NVMe d
 
 ## The software
 
-This is how my home Kubernetes cluster is configured:
+Here is how this cluster is configured:
 
 | Software                                                       | Used for                                               |
 | -------------------------------------------------------------- | ------------------------------------------------------ |
-| [k3s](https://k3s.io)                                          | Lightweight Kubernetes distribution                    |
-| [Flux](https://fluxcd.io)                                      | Keeps the cluster in sync with this repo               |
-| [Renovate](https://www.mend.io/renovate)                       | Opens merge requests when a new app or chart version comes out |
+| [k3s](https://k3s.io)                                          | Light Kubernetes distribution                    |
+| [Flux](https://fluxcd.io)                                      | GitOps operation               |
+| [Renovate](https://www.mend.io/renovate)                       | Opens merge requests on version updates |
 | [Traefik](https://traefik.io)                                  | Ingress controller                                     |
 | [MetalLB](https://metallb.io)                                  | Load balancer                                          |
 | [Cloudflare Tunnels](https://github.com/cloudflare/cloudflared) | Remote access to the public services                  |
@@ -54,7 +53,7 @@ This is how my home Kubernetes cluster is configured:
 | [Longhorn](https://longhorn.io)                                | App storage                                            |
 | [Prometheus](https://prometheus.io), [Loki](https://grafana.com/oss/loki/), [Grafana](https://grafana.com) | Metrics, logs and alerts |
 
-When I push to `main`, a webhook tells Flux right away and the change gets applied in three steps: first the shared settings, then the core services, then the apps. Values that change between setups (domain, timezone, IPs, disk paths) are written once in a single settings file instead of being repeated everywhere.
+When I push to `main`, a webhook tells Flux right away and the change gets applied in three steps: shared settings, then core services, then apps. Values that change between setups (domain, timezone, IPs, disk paths) are written once in a single settings file.
 
 ```mermaid
 graph TD
@@ -120,13 +119,13 @@ Here are the services that are exposed to the internet:
 | [Jellyfin](https://jellyfin.org)                          | Streaming films and TV                          |
 | [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) | Live TV                                         |
 | [Nextcloud](https://nextcloud.com)                        | General purpose cloud storage for files         |
-| [Immich](https://immich.app)                              | Personal Google Photos substitute               |
+| [Immich](https://immich.app)                              | Mobile photo/video management and sync               |
 | [Navidrome](https://navidrome.org)                        | Music streaming                                 |
-| [Matrix](https://matrix.org)                              | Chat                                            |
+| [Matrix](https://matrix.org)                              | Friends Chat                                            |
 | [Grafana](https://grafana.com)                            | Monitoring                                      |
-| [GitLab](https://about.gitlab.com)                        | Hosting this repo and running the CI            |
+| [GitLab](https://about.gitlab.com)                        | Hosting repos and running pipelines            |
 | [Authentik](https://goauthentik.io)                       | Centralized authentication provider             |
-| Centralino                                                | Home automation panel for the ESP32 boards      |
+| Centralino                                                | Home automation panel      |
 
 ### Private services
 
@@ -136,7 +135,7 @@ Here are the services that are exposed to the internet:
 | [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Network filter and DNS rewrites in the local network     |
 | [Headlamp](https://headlamp.dev)                               | Kubernetes dashboard                                     |
 | Pankha                                                         | Fan and temperature control                              |
-| [Homepage](https://gethomepage.dev)                            | Start page with every service                            |
+| [Homepage](https://gethomepage.dev)                            | Homepage with all apps                            |
 
 The server itself is only reachable over VPN.
 
@@ -146,16 +145,11 @@ The server itself is only reachable over VPN.
 - **MinIO** is used as S3 storage behind Nextcloud
 - **Backup jobs** copy app data and databases with restic to the backup drive every week
 
-The backup server only accepts new backups and never lets anyone delete or overwrite the old ones, so even a hacked app can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails.
+The backup server only accepts new backups and never lets any new backups delete or overwrite the old ones, so apps can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails.
 
 ## Secrets
 
-No passwords or tokens are in this repo. They are stored in Bitwarden Secrets Manager and pulled into the cluster when needed, and when one changes the apps using it restart by themselves. Rotating a password is a single command:
-
-```sh
-task autorotate-postgres app=nextcloud   # new database password, everywhere
-task rotate-tunnel svc=jellyfin          # new Cloudflare tunnel token
-```
+No passwords or tokens are in this repo. They are stored in Bitwarden Secrets Manager and pulled into the cluster when needed. When a secret changes, the apps using it restart automatically.
 
 ## Rebuilding from scratch
 
@@ -167,9 +161,9 @@ task render-settings                               # turn it into the settings f
 task bootstrap                                     # run on the new machine
 ```
 
-This brings back the apps and the config, the data comes back separately from the backups. The full walkthrough is in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md).
+This brings back the apps and the config. A more detailed description in [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md).
 
-## Day to day
+## Handy Tools
 
 ```sh
 task status      # what's running
