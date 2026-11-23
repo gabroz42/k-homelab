@@ -147,6 +147,14 @@ The server itself is only reachable over VPN.
 
 The backup server only accepts new backups and never lets any new backups delete or overwrite the old ones, so apps can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails.
 
+## Alerting
+
+Alerts arrive by email through Mailjet. Prometheus keeps an eye on the backups, the disks, Longhorn and the pods, and Flux reports any update that fails to deploy. Emails are grouped and spaced out, so a bad day doesn't flood my inbox.
+
+The UPS has its own emails, which also go to a second person at home: one when the power goes out, one when it comes back. If the battery runs low, NUT shuts the server down cleanly before it dies.
+
+If the whole server goes quiet, an outside check on [healthchecks.io](https://healthchecks.io) notices the missing heartbeat and emails me.
+
 ## Secrets
 
 No passwords or tokens are in this repo. They are stored in Bitwarden Secrets Manager and pulled into the cluster when needed. When a secret changes, the apps using it restart automatically.
