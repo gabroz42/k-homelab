@@ -94,6 +94,11 @@
       "groupName": "immich"
     },
     {
+      "matchPackageNames": ["nextcloud"],
+      "groupName": "nextcloud",
+      "automerge": false
+    },
+    {
       "matchDatasources": ["docker"],
       "matchPackageNames": ["jellyfin/jellyfin"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(\\.(?<patch>\\d+))?$"
