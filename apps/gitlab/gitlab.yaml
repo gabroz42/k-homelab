@@ -37,6 +37,21 @@ spec:
                 secretKeyRef:
                   name: gitlab-oidc
                   key: client-secret
+            - name: GITLAB_SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-smtp
+                  key: username
+            - name: GITLAB_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-smtp
+                  key: password
+            - name: GITLAB_EMAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-smtp
+                  key: from
             - name: GITLAB_OMNIBUS_CONFIG
               value: |
                 external_url 'https://gitlab.${PUBLIC_DOMAIN}'
@@ -72,6 +87,18 @@ spec:
                 gitlab_pages['enable'] = false
                 gitlab_kas['enable'] = false
                 gitlab_rails['usage_ping_enabled'] = false
+
+                gitlab_rails['smtp_enable'] = true
+                gitlab_rails['smtp_address'] = 'in-v3.mailjet.com'
+                gitlab_rails['smtp_port'] = 587
+                gitlab_rails['smtp_user_name'] = ENV['GITLAB_SMTP_USER']
+                gitlab_rails['smtp_password'] = ENV['GITLAB_SMTP_PASSWORD']
+                gitlab_rails['smtp_domain'] = '${PUBLIC_DOMAIN}'
+                gitlab_rails['smtp_authentication'] = 'login'
+                gitlab_rails['smtp_enable_starttls_auto'] = true
+                gitlab_rails['gitlab_email_from'] = ENV['GITLAB_EMAIL_FROM']
+                gitlab_rails['gitlab_email_reply_to'] = ENV['GITLAB_EMAIL_FROM']
+                gitlab_rails['gitlab_email_display_name'] = 'GitLab'
 
                 gitlab_rails['backup_keep_time'] = 259200
 
