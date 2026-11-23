@@ -33,6 +33,7 @@ spec:
 
     prometheus:
       prometheusSpec:
+        externalUrl: https://prometheus.${LOCAL_DOMAIN}
         retention: 30d
         retentionSize: 36GB
         resources:
@@ -69,6 +70,9 @@ spec:
       alertmanagerSpec:
         useExistingSecret: true
         configSecret: alertmanager-config
+        configMaps:
+          - alertmanager-templates
+        externalUrl: https://alertmanager.${LOCAL_DOMAIN}
         resources:
           requests:
             cpu: 50m

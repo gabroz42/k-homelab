@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-templates
+  namespace: monitoring
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+data:
+  homelab.tmpl: |
+    {{ define "homelab.icon" }}{{ if eq .CommonLabels.severity "critical" }}🔴{{ else if eq .CommonLabels.severity "error" }}❌{{ else }}⚠️{{ end }}{{ end }}
+
+    {{ define "homelab.subject" }}{{ if eq .Status "resolved" }}✅ Risolto: {{ (index .Alerts 0).Labels.alertname }}{{ if gt (len .Alerts) 1 }} e altri{{ end }}{{ else }}{{ template "homelab.icon" . }} {{ (index .Alerts.Firing 0).Labels.alertname }}{{ with (index .Alerts.Firing 0).Labels.namespace }} · {{ . }}{{ end }}{{ if gt (len .Alerts.Firing) 1 }} e altri{{ end }}{{ end }}{{ end }}
+
+    {{ define "homelab.flux.subject" }}{{ with index .Alerts 0 }}❌ Deploy fallito: {{ .Labels.namespace }}/{{ .Labels.name }}{{ end }}{{ if gt (len .Alerts) 1 }} e altri{{ end }}{{ end }}
+
+    {{ define "homelab.ups.subject" }}{{ with index .Alerts 0 }}{{ if eq $.Status "resolved" }}{{ .Annotations.title_resolved }}{{ else }}{{ .Annotations.title }}{{ end }}{{ end }}{{ end }}
+
+    {{ define "homelab.ups.text" }}{{ with index .Alerts 0 }}{{ if eq $.Status "resolved" }}{{ .Annotations.title_resolved }}
+
+    {{ .Annotations.description_resolved }}
+
+    Inizio: {{ .StartsAt | tz "Europe/Rome" | date "02/01/2006 15:04" }}
+    Fine: {{ .EndsAt | tz "Europe/Rome" | date "02/01/2006 15:04" }}{{ else }}{{ .Annotations.title }}
+
+    {{ .Annotations.description }}
+
+    Inizio: {{ .StartsAt | tz "Europe/Rome" | date "02/01/2006 15:04" }}{{ with .Annotations.battery_charge }}
+    Carica batteria: {{ . }}%{{ end }}{{ end }}{{ end }}
+    {{ end }}
+
+    {{ define "homelab.ups.html" }}{{ with index .Alerts 0 }}{{ $resolved := eq $.Status "resolved" }}{{ $color := .Annotations.color }}{{ if $resolved }}{{ $color = "#2e7d32" }}{{ end }}<!DOCTYPE html>
+    <html lang="it">
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"></head>
+    <body style="margin:0;padding:0;background:#eef1f5;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef1f5;">
+    <tr><td align="center" style="padding:28px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2937;">
+    <tr><td style="background:{{ $color }};padding:30px 30px 26px;color:#ffffff;">
+    <div style="font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;opacity:0.85;">UPS di casa</div>
+    <div style="font-size:25px;font-weight:700;line-height:1.3;margin-top:8px;">{{ if $resolved }}{{ .Annotations.title_resolved }}{{ else }}{{ .Annotations.title }}{{ end }}</div>
+    </td></tr>
+    <tr><td style="padding:26px 30px 6px;font-size:16px;line-height:1.6;color:#374151;">{{ if $resolved }}{{ .Annotations.description_resolved }}{{ else }}{{ .Annotations.description }}{{ end }}</td></tr>
+    <tr><td style="padding:14px 30px 26px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:15px;">
+    <tr><td style="padding:12px 0;border-top:1px solid #e5e7eb;color:#6b7280;">Inizio</td><td align="right" style="padding:12px 0;border-top:1px solid #e5e7eb;font-weight:600;">{{ .StartsAt | tz "Europe/Rome" | date "02/01/2006 · 15:04" }}</td></tr>
+    {{ if $resolved }}<tr><td style="padding:12px 0;border-top:1px solid #e5e7eb;color:#6b7280;">Fine</td><td align="right" style="padding:12px 0;border-top:1px solid #e5e7eb;font-weight:600;">{{ .EndsAt | tz "Europe/Rome" | date "02/01/2006 · 15:04" }}</td></tr>
+    {{ else }}{{ with .Annotations.battery_charge }}<tr><td style="padding:12px 0;border-top:1px solid #e5e7eb;color:#6b7280;">Carica batteria</td><td align="right" style="padding:12px 0;border-top:1px solid #e5e7eb;font-weight:600;">{{ . }}%</td></tr>
+    {{ end }}{{ end }}</table>
+    </td></tr>
+    <tr><td style="padding:16px 30px;background:#f8fafc;border-top:1px solid #eef1f5;font-size:12px;line-height:1.5;color:#9ca3af;">Messaggio automatico del server di casa.</td></tr>
+    </table>
+    </td></tr>
+    </table>
+    </body>
+    </html>{{ end }}{{ end }}
