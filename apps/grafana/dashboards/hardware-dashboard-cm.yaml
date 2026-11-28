@@ -460,11 +460,586 @@ data:
             "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
             "tooltip": {"mode": "multi"}
           }
+        },
+        {
+          "type": "row",
+          "title": "Disk Health",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 41
+          },
+          "id": 14,
+          "panels": []
+        },
+        {
+          "type": "table",
+          "title": "Drive Health (SMART)",
+          "id": 15,
+          "description": "HDDs are read once per spin-up (the exporter never wakes a sleeping disk), so their values can be up to a week old. Wear, spare and media errors are NVMe-only; reallocated/pending sectors are HDD-only.",
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 42
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device, model_name, serial_number, firmware_version) (smartctl_device)",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_smart_status)",
+              "refId": "B",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_temperature{temperature_type=\"current\"})",
+              "refId": "C",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_power_on_seconds)",
+              "refId": "D",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_percentage_used)",
+              "refId": "E",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_available_spare)",
+              "refId": "F",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_media_errors)",
+              "refId": "G",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_attribute{attribute_id=\"5\", attribute_value_type=\"raw\"})",
+              "refId": "H",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_attribute{attribute_id=\"197\", attribute_value_type=\"raw\"})",
+              "refId": "I",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_bytes_written)",
+              "refId": "J",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_power_cycle_count)",
+              "refId": "K",
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "Value #A": true
+                },
+                "indexByName": {
+                  "device": 0,
+                  "model_name": 1,
+                  "serial_number": 2,
+                  "firmware_version": 3,
+                  "Value #B": 4,
+                  "Value #C": 5,
+                  "Value #E": 6,
+                  "Value #F": 7,
+                  "Value #G": 8,
+                  "Value #H": 9,
+                  "Value #I": 10,
+                  "Value #J": 11,
+                  "Value #D": 12,
+                  "Value #K": 13
+                },
+                "renameByName": {
+                  "device": "Device",
+                  "model_name": "Model",
+                  "serial_number": "Serial",
+                  "firmware_version": "Firmware",
+                  "Value #B": "SMART",
+                  "Value #C": "Temp",
+                  "Value #D": "Power-on",
+                  "Value #E": "Wear used",
+                  "Value #F": "Spare",
+                  "Value #G": "Media errors",
+                  "Value #H": "Reallocated",
+                  "Value #I": "Pending",
+                  "Value #J": "Written",
+                  "Value #K": "Power cycles"
+                }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "filterable": false
+              },
+              "noValue": "–"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "SMART"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAILED",
+                            "color": "red",
+                            "index": 0
+                          },
+                          "1": {
+                            "text": "PASSED",
+                            "color": "green",
+                            "index": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Temp"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "celsius"
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 50
+                        },
+                        {
+                          "color": "red",
+                          "value": 65
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Wear used"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 70
+                        },
+                        {
+                          "color": "red",
+                          "value": 90
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Spare"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 20
+                        },
+                        {
+                          "color": "green",
+                          "value": 50
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Media errors"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Reallocated"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Pending"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Written"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "decbytes"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Power-on"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Drive Temperatures (SMART)",
+          "id": 16,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 49
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (smartctl_device_temperature{temperature_type=\"current\"})",
+              "refId": "A",
+              "legendFormat": "{{device}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "custom": {
+                "fillOpacity": 0,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": true
+              }
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "NVMe Writes per Day",
+          "id": 17,
+          "description": "Daily host writes. Divide the drive's rated TBW by this to estimate remaining life.",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 49
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "interval": "1h",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (device) (increase(smartctl_device_bytes_written[1d]))",
+              "refId": "A",
+              "legendFormat": "{{device}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "decbytes",
+              "min": 0,
+              "custom": {
+                "fillOpacity": 10,
+                "lineWidth": 2,
+                "showPoints": "never"
+              }
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
         }
+
       ],
       "refresh": "30s",
       "schemaVersion": 39,
-      "tags": ["hardware", "homelab", "ups", "power"],
+      "tags": ["hardware", "homelab", "ups", "power", "disks"],
       "templating": {"list": []},
       "time": {"from": "now-6h", "to": "now"},
       "timepicker": {},

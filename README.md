@@ -145,7 +145,7 @@ The server itself is only reachable over VPN.
 - **MinIO** is used as S3 storage behind Nextcloud
 - **Backup jobs** copy app data and databases with restic to the backup drive every week
 
-The backup server only accepts new backups and never lets any new backups delete or overwrite the old ones, so apps can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails.
+The backup server only accepts new backups and never lets any new backups delete or overwrite the old ones, so apps can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails. Every week the backups are also mirrored offsite to Backblaze B2, so they survive losing the whole server.
 
 ## Alerting
 

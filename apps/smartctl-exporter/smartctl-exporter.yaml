@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: smartctl-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: smartctl-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smartctl-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: smartctl-exporter
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: nvme
+          image: quay.io/prometheuscommunity/smartctl-exporter:v0.15.0
+          args:
+            - --web.listen-address=:9633
+            - --smartctl.interval=60s
+            - --smartctl.device=/dev/disk/by-id/nvme-Sabrent_BD52079C147D00592004
+            - --smartctl.device=/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_500GB_S466NX0KA25639Y
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          ports:
+            - name: nvme
+              containerPort: 9633
+          volumeMounts:
+            - name: dev-disk
+              mountPath: /dev/disk
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: nvme
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: nvme
+            periodSeconds: 30
+        - name: hdd
+          image: quay.io/prometheuscommunity/smartctl-exporter:v0.15.0
+          args:
+            - --web.listen-address=:9634
+            - --smartctl.interval=12h
+            - --smartctl.powermode-check=standby
+            - --smartctl.device=/dev/disk/by-id/ata-ST4000DM004-2CV104_ZFN3NYWD
+            - --smartctl.device=/dev/disk/by-id/ata-WDC_WD20EARS-00MVWB0_WD-WCAZA7190248
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          ports:
+            - name: hdd
+              containerPort: 9634
+          volumeMounts:
+            - name: dev-disk
+              mountPath: /dev/disk
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: hdd
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: hdd
+            periodSeconds: 30
+      volumes:
+        - name: dev-disk
+          hostPath:
+            path: /dev/disk
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartctl-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: smartctl-exporter
+spec:
+  selector:
+    app.kubernetes.io/name: smartctl-exporter
+  ports:
+    - name: nvme
+      port: 9633
+      targetPort: nvme
+    - name: hdd
+      port: 9634
+      targetPort: hdd
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: smartctl-exporter
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/name: smartctl-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smartctl-exporter
+  endpoints:
+    - port: nvme
+      interval: 60s
+    - port: hdd
+      interval: 4m
+      scrapeTimeout: 30s
