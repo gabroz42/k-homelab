@@ -22,3 +22,7 @@ spec:
         object.metadata.name.startsWith('tvheadend-'))) ||
         (object.metadata.namespace == 'pankha' &&
         object.metadata.name.startsWith('pankha-agent'))
+    - name: smart-disk-health-passthrough
+      expression: >-
+        object.metadata.namespace == 'monitoring' && (object.metadata.name == 'smartctl-exporter' ||
+        object.metadata.name.startsWith('smartctl-exporter-'))

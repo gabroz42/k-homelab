@@ -22,15 +22,53 @@ spec:
           nodeSelector:
             kubernetes.io/hostname: ${PRIMARY_NODE}
           securityContext:
-            runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
+            fsGroup: 1000
             seccompProfile:
               type: RuntimeDefault
+          initContainers:
+            - name: k3s-db-snapshot
+              image: keinos/sqlite3:3.54.1
+              securityContext:
+                runAsNonRoot: false
+                runAsUser: 0
+                runAsGroup: 0
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  rm -f /out/state.db
+                  sqlite3 'file:/k3s-db/state.db?mode=ro' "VACUUM INTO '/out/state.db'"
+                  test "$(sqlite3 /out/state.db 'PRAGMA integrity_check;')" = ok
+                  cp /k3s-token /out/token
+                  chmod 0440 /out/state.db /out/token
+                  ls -l /out
+              volumeMounts:
+                - name: k3s-db
+                  mountPath: /k3s-db
+                  readOnly: true
+                - name: k3s-token
+                  mountPath: /k3s-token
+                  readOnly: true
+                - name: k3s-snapshot
+                  mountPath: /out
           containers:
             - name: backup
               image: restic/restic:0.20.0
               securityContext:
+                runAsNonRoot: true
                 allowPrivilegeEscalation: false
                 capabilities:
                   drop: ["ALL"]
@@ -99,6 +137,9 @@ spec:
                 - name: lidarr
                   mountPath: /src/lidarr
                   readOnly: true
+                - name: k3s-snapshot
+                  mountPath: /src/k3s
+                  readOnly: true
           volumes:
             - name: sonarr
               hostPath:
@@ -136,3 +177,13 @@ spec:
               hostPath:
                 path: /opt/lidarr
                 type: Directory
+            - name: k3s-db
+              hostPath:
+                path: /var/lib/rancher/k3s/server/db
+                type: Directory
+            - name: k3s-token
+              hostPath:
+                path: /var/lib/rancher/k3s/server/token
+                type: File
+            - name: k3s-snapshot
+              emptyDir: {}

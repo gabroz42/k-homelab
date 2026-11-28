@@ -34,5 +34,6 @@ resources:
   - prometheus/rules/ks.yaml
   - renovate/ks.yaml
   - servarr/ks.yaml
+  - smartctl-exporter/ks.yaml
   - traefik/ks.yaml
   - upgrade-plans/ks.yaml

@@ -90,7 +90,7 @@ schema               # architecture diagrams
 ## Networking
 
 First, a pool of IP addresses is reserved for MetalLB and Traefik is given an IP.
-Then, a DNS rewrite is configured in AdGuard Home so browsers in my network can reach every local service at `*.local.gbroccoli.dev` by asking Traefik for it via hostname. For publicly exposed services Traefik is set as the target of the Cloudflare tunnels.
+Then a DNS rewrite is configured in AdGuard Home so browsers in my network can reach every local service at `*.local.gbroccoli.dev` by asking Traefik for it via hostname. For publicly exposed services Traefik is set as the target of the Cloudflare tunnels.
 
 All services exposed to the outside world do so via a Cloudflare tunnel pod, so no ports are open on my router. Each tunnel runs two pods, so if one goes down the service stays up. Public services also go through Authentik, so you have to log in before reaching any app.
 
@@ -145,7 +145,7 @@ The server itself is only reachable over VPN.
 - **MinIO** is used as S3 storage behind Nextcloud
 - **Backup jobs** copy app data and databases with restic to the backup drive every week
 
-The backup server only accepts new backups and never lets any new backups delete or overwrite the old ones, so apps can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails.
+The backup server only accepts new backups and never lets any new backups delete or overwrite the old ones, so apps can't wipe them. I keep 7 daily, 4 weekly and 12 monthly copies and get an alert if a backup fails. Every week the backups are also mirrored offsite to Backblaze B2, so they survive losing the whole server.
 
 ## Alerting
 
