@@ -146,6 +146,8 @@ spec:
     ingress:
       enabled: true
       className: traefik
+      annotations:
+        traefik.ingress.kubernetes.io/router.middlewares: nextcloud-dav-redirect@kubernetescrd
       hosts:
         - host: nextcloud.${PUBLIC_DOMAIN}
           paths:

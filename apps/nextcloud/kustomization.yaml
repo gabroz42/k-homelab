@@ -4,6 +4,7 @@ resources:
   - authentik-forward-auth.yaml
   - nextcloud-cache.yaml
   - nextcloud-cron.yaml
+  - nextcloud-dav-redirect.yaml
   - nextcloud-db.yaml
   - nextcloud-externalsecret.yaml
   - nextcloud-helmrelease.yaml

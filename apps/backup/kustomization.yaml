@@ -11,6 +11,7 @@ resources:
   - restic-exporter
   - restic-exporter-restart.yaml
   - restic-prune-cronjob.yaml
+  - offsite-backup-cronjob.yaml
   - system-cleanup.yaml
   - volsync-immich.yaml
   - volsync-minio.yaml
