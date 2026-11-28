@@ -12,4 +12,5 @@ resources:
   - jellyfin-config
   - adguard
   - host-configs
+  - gitlab
   - shared.yaml

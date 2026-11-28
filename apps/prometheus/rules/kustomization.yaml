@@ -4,3 +4,4 @@ resources:
   - loki-alerts.yaml
   - eso-podmonitor.yaml
   - eso-alerts.yaml
+  - nextcloud-alerts.yaml

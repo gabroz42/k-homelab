@@ -17,6 +17,8 @@ data:
   ESP32_TAVERNA_IP: 192.168.1.51
   ESP32_GARAGE_IP: 192.168.1.52
   BACKUP_PATH: /mnt/backups
+  OFFSITE_S3_ENDPOINT: s3.eu-central-003.backblazeb2.com
+  OFFSITE_BUCKET: k-homelab-restic-backup
   NVME_PATH: /mnt/nvme500
   MEDIA_PATH: /media/gabro/Volume
   MUSIC_PATH: /home/gabro/Music

@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nextcloud-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: nextcloud.rules
+      rules:
+        - alert: NextcloudUnavailable
+          expr: |
+            (sum(increase(traefik_service_requests_total{exported_service=~"nextcloud-nextcloud-.*", code="503"}[30m])) >= 3)
+            and
+            (sum(increase(traefik_service_requests_total{exported_service=~"nextcloud-nextcloud-.*", code="503"}[30m]))
+              / sum(increase(traefik_service_requests_total{exported_service=~"nextcloud-nextcloud-.*"}[30m])) > 0.5)
+          for: 10m
+          labels:
+            severity: critical
+            namespace: nextcloud
+          annotations:
+            summary: "Nextcloud is answering mostly 503"
+            description: "Over the last 30 minutes more than half of Nextcloud's responses were 503. Usually needsDbUpgrade after an image change or stuck maintenance mode: check `occ status` and run `occ upgrade` / `occ maintenance:mode --off`."

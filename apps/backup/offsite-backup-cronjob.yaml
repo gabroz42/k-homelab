@@ -1,0 +1,212 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: restic-offsite-creds
+  namespace: backup
+spec:
+  refreshInterval: 12h50m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: bitwarden-secretsmanager
+  target:
+    name: restic-offsite-creds
+    creationPolicy: Owner
+  data:
+    - secretKey: aws-access-key-id
+      remoteRef:
+        key: backup/restic-offsite/aws-access-key-id
+    - secretKey: aws-secret-access-key
+      remoteRef:
+        key: backup/restic-offsite/aws-secret-access-key
+    - secretKey: restic-password
+      remoteRef:
+        key: backup/restic-offsite/restic-password
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: offsite-backup
+  namespace: backup
+spec:
+  schedule: "0 5 * * 1"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 4
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 86400
+      activeDeadlineSeconds: 72000
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: offsite-backup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: ${PRIMARY_NODE}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: copy
+              image: restic/restic:0.19.1
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                limits:
+                  cpu: 1000m
+                  memory: 3Gi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -uo pipefail
+                  failed=""
+                  monthly=""
+                  if [ "$(date +%d)" -le 7 ]; then
+                    monthly=yes
+                  fi
+
+                  copy_repo() {
+                    local repo_name="$1"
+                    export RESTIC_FROM_PASSWORD="$2"
+                    local src="/data/$repo_name"
+                    local dst="s3:https://$OFFSITE_S3_ENDPOINT/$OFFSITE_BUCKET/$repo_name"
+                    if [ ! -f "$src/config" ]; then
+                      echo "== skip: $repo_name (local repository not initialised yet) =="
+                      return 0
+                    fi
+                    if ! restic -r "$dst" cat config >/dev/null 2>&1; then
+                      echo "== init: $repo_name =="
+                      restic -r "$dst" init --from-repo "$src" --copy-chunker-params || return 1
+                    fi
+                    echo "== unlock: $repo_name =="
+                    restic -r "$dst" unlock || return 1
+                    echo "== copy: $repo_name =="
+                    restic -r "$dst" copy --from-repo "$src" || return 1
+                    if [ -n "$monthly" ]; then
+                      echo "== forget+prune: $repo_name =="
+                      restic -r "$dst" forget --keep-weekly 8 --keep-monthly 24 --keep-yearly 5 --prune || return 1
+                      echo "== check: $repo_name =="
+                      restic -r "$dst" check --read-data-subset=1% || return 1
+                    fi
+                  }
+
+                  copy_repo immich-db       "$IMMICH_DB_PASSWORD"        || failed="$failed immich-db"
+                  copy_repo nextcloud-db    "$NEXTCLOUD_DB_PASSWORD"     || failed="$failed nextcloud-db"
+                  copy_repo authentik-db    "$AUTHENTIK_DB_PASSWORD"     || failed="$failed authentik-db"
+                  copy_repo matrix-db       "$MATRIX_DB_PASSWORD"        || failed="$failed matrix-db"
+                  copy_repo pankha-db       "$PANKHA_DB_PASSWORD"        || failed="$failed pankha-db"
+                  copy_repo adguard         "$ADGUARD_PASSWORD"          || failed="$failed adguard"
+                  copy_repo jellyfin-config "$JELLYFIN_CONFIG_PASSWORD"  || failed="$failed jellyfin-config"
+                  copy_repo matrix-files    "$MATRIX_FILES_PASSWORD"     || failed="$failed matrix-files"
+                  copy_repo nextcloud-minio "$NEXTCLOUD_MINIO_PASSWORD"  || failed="$failed nextcloud-minio"
+                  copy_repo immich-files    "$IMMICH_FILES_PASSWORD"     || failed="$failed immich-files"
+                  copy_repo gitlab          "$GITLAB_PASSWORD"           || failed="$failed gitlab"
+                  copy_repo host-configs    "$HOST_CONFIGS_PASSWORD"     || failed="$failed host-configs"
+
+                  if [ -n "$failed" ]; then
+                    echo "== FAILED repos:$failed =="
+                    exit 1
+                  fi
+                  echo "== all repos copied offsite =="
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /tmp/restic-cache
+                - name: OFFSITE_S3_ENDPOINT
+                  value: ${OFFSITE_S3_ENDPOINT}
+                - name: OFFSITE_BUCKET
+                  value: ${OFFSITE_BUCKET}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-offsite-creds
+                      key: aws-access-key-id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-offsite-creds
+                      key: aws-secret-access-key
+                - name: RESTIC_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-offsite-creds
+                      key: restic-password
+                - name: IMMICH_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: immich-db-password
+                - name: NEXTCLOUD_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: nextcloud-db-password
+                - name: AUTHENTIK_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: authentik-db-password
+                - name: MATRIX_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: matrix-db-password
+                - name: PANKHA_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: pankha-db-password
+                - name: ADGUARD_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: adguard-password
+                - name: JELLYFIN_CONFIG_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: jellyfin-config-password
+                - name: MATRIX_FILES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: matrix-files-password
+                - name: NEXTCLOUD_MINIO_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: nextcloud-minio-password
+                - name: IMMICH_FILES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: immich-files-password
+                - name: GITLAB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: gitlab-password
+                - name: HOST_CONFIGS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: host-configs-password
+          volumes:
+            - name: data
+              hostPath:
+                path: ${BACKUP_PATH}/restic
+                type: Directory

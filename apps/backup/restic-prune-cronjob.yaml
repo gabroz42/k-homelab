@@ -79,6 +79,7 @@ spec:
                   prune_repo jellyfin-config  "$JELLYFIN_CONFIG_PASSWORD"  || failed="$failed jellyfin-config"
                   prune_repo adguard          "$ADGUARD_PASSWORD"          || failed="$failed adguard"
                   prune_repo host-configs     "$HOST_CONFIGS_PASSWORD"     || failed="$failed host-configs"
+                  prune_repo gitlab           "$GITLAB_PASSWORD"           || failed="$failed gitlab"
 
                   if [ -n "$failed" ]; then
                     echo "== FAILED repos:$failed =="
@@ -143,6 +144,11 @@ spec:
                     secretKeyRef:
                       name: restic-admin-creds
                       key: host-configs-password
+                - name: GITLAB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-admin-creds
+                      key: gitlab-password
           volumes:
             - name: data
               hostPath:
