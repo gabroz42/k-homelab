@@ -253,14 +253,14 @@ data:
         - Cloudflare Dashboard:
             - abbr: CF
               href: https://dash.cloudflare.com
-        - GitLab Repo:
-            - abbr: GL
-              href: https://gitlab.${PUBLIC_DOMAIN}/server/k-homelab
+        - GitHub Repo:
+            - abbr: GH
+              href: https://github.com/gabroz42/k-homelab
 
     - Docs:
-        - Kubernetes Docs:
-            - abbr: K8
-              href: https://kubernetes.io/docs/
+        - Backblaze:
+            - abbr: B2
+              href: https://secure.backblaze.com/user_signin.htm
         - Personal Website:
             - abbr: GB
               href: https://resume.${PUBLIC_DOMAIN}
