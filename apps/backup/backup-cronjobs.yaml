@@ -126,7 +126,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
-            fsGroup: 1000
+            supplementalGroups: [33]
             seccompProfile:
               type: RuntimeDefault
           initContainers:
@@ -183,7 +183,7 @@ spec:
                   set -euo pipefail
                   REST_URL="rest:http://$REST_USER:$REST_PASSWORD@restic-rest-server.backup.svc.cluster.local:8000/nextcloud-db"
                   restic -r "$REST_URL" snapshots > /dev/null 2>&1 || restic -r "$REST_URL" init
-                  restic -r "$REST_URL" backup --host nextcloud /dump
+                  restic -r "$REST_URL" backup --host nextcloud /dump /nextcloud-config
               env:
                 - name: RESTIC_CACHE_DIR
                   value: /tmp/restic-cache
@@ -206,9 +206,17 @@ spec:
                 - name: dump
                   mountPath: /dump
                   readOnly: true
+                - name: nextcloud-main
+                  mountPath: /nextcloud-config
+                  subPath: config
+                  readOnly: true
           volumes:
             - name: dump
               emptyDir: {}
+            - name: nextcloud-main
+              persistentVolumeClaim:
+                claimName: nextcloud-nextcloud
+                readOnly: true
 ---
 apiVersion: batch/v1
 kind: CronJob

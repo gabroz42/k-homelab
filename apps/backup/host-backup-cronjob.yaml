@@ -64,6 +64,37 @@ spec:
                   readOnly: true
                 - name: k3s-snapshot
                   mountPath: /out
+            - name: etc-archive
+              image: keinos/sqlite3:3.54.1
+              securityContext:
+                runAsNonRoot: false
+                runAsUser: 0
+                runAsGroup: 0
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 128Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  rm -f /out/etc.tar
+                  tar -C /host -cf /out/etc.tar etc
+                  chmod 0440 /out/etc.tar
+                  ls -l /out
+              volumeMounts:
+                - name: host-etc
+                  mountPath: /host/etc
+                  readOnly: true
+                - name: etc-snapshot
+                  mountPath: /out
           containers:
             - name: backup
               image: restic/restic:0.20.0
@@ -140,6 +171,9 @@ spec:
                 - name: k3s-snapshot
                   mountPath: /src/k3s
                   readOnly: true
+                - name: etc-snapshot
+                  mountPath: /src/etc
+                  readOnly: true
           volumes:
             - name: sonarr
               hostPath:
@@ -186,4 +220,10 @@ spec:
                 path: /var/lib/rancher/k3s/server/token
                 type: File
             - name: k3s-snapshot
+              emptyDir: {}
+            - name: host-etc
+              hostPath:
+                path: /etc
+                type: Directory
+            - name: etc-snapshot
               emptyDir: {}
